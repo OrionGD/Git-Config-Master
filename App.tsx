@@ -206,10 +206,10 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
               {[
-                { step: '1. Status', icon: '🔍', cmd: 'git status', desc: 'See what files have changed since your last save.', color: 'emerald' },
-                { step: '2. Add', icon: '📥', cmd: 'git add .', desc: 'Move your changes into the "Staging Area" (Preparing to save).', color: 'emerald' },
-                { step: '3. Commit', icon: '💾', cmd: 'git commit -m "msg"', desc: 'Create a permanent snapshot of your staged changes.', color: 'emerald' },
-                { step: '4. Push', icon: '☁️', cmd: 'git push', desc: 'Upload your local snapshots to a remote server (GitHub).', color: 'emerald' },
+                { step: '1. Status Command', icon: '🔍', cmd: 'git status', desc: 'See what files have changed since your last save.', color: 'emerald' },
+                { step: '2. Add Command', icon: '📥', cmd: 'git add .', desc: 'Move your changes into the "Staging Area" (Preparing to save).', color: 'emerald' },
+                { step: '3. Commit Command', icon: '💾', cmd: 'git commit -m "msg"', desc: 'Create a permanent snapshot of your staged changes.', color: 'emerald' },
+                { step: '4. Push Command', icon: '☁️', cmd: 'git push', desc: 'Upload your local snapshots to a remote server (GitHub).', color: 'emerald' },
               ].map((item, i) => (
                 <div key={i} className="p-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-[2.5rem] relative overflow-hidden group hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-none">
                   <div className="flex items-center justify-between mb-6">
