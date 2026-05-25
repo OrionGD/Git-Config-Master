@@ -1,81 +1,103 @@
 :root {
   /* =========================================================
-     CORE BRAND PALETTE (OCEAN TWILIGHT)
+     CORE BRAND PALETTE (WALNUT)
   ========================================================= */
-  --color-brand-50: rgb(237 237 248);
-  --color-brand-100: rgb(219 220 240);
-  --color-brand-200: rgb(183 184 225);
-  --color-brand-300: rgb(146 149 211);
-  --color-brand-400: rgb(110 113 196);
-  --color-brand-500: rgb(74 78 181);
-  --color-brand-600: rgb(59 62 145);
-  --color-brand-700: rgb(44 47 109);
-  --color-brand-800: rgb(30 31 72);
-  --color-brand-900: rgb(15 16 36);
-  --color-brand-950: rgb(10 11 25);
+
+  --color-walnut-50: rgb(255 244 229);
+  --color-walnut-100: rgb(255 233 204);
+  --color-walnut-200: rgb(255 211 153);
+  --color-walnut-300: rgb(255 189 102);
+  --color-walnut-400: rgb(255 167 51);
+  --color-walnut-500: rgb(255 145 0);
+  --color-walnut-600: rgb(204 116 0);
+  --color-walnut-700: rgb(153 87 0);
+  --color-walnut-800: rgb(102 58 0);
+  --color-walnut-900: rgb(51 29 0);
+  --color-walnut-950: rgb(36 20 0);
 
   /* =========================================================
-     TEXT COLORS
+     DYNAMIC BRAND SYSTEM COMPATIBILITY MAPPINGS
   ========================================================= */
-  --color-text-primary: rgb(237 237 248);
-  --color-text-secondary: rgb(183 184 225);
-  --color-text-muted: rgb(110 113 196);
-  --color-text-disabled: rgb(74 78 181);
-  --color-text-dark: rgb(15 16 36);
+  --color-brand-50: var(--color-walnut-50);
+  --color-brand-100: var(--color-walnut-100);
+  --color-brand-200: var(--color-walnut-200);
+  --color-brand-300: var(--color-walnut-300);
+  --color-brand-400: var(--color-walnut-400);
+  --color-brand-500: var(--color-walnut-500);
+  --color-brand-600: var(--color-walnut-600);
+  --color-brand-700: var(--color-walnut-700);
+  --color-brand-800: var(--color-walnut-800);
+  --color-brand-900: var(--color-walnut-900);
+  --color-brand-950: var(--color-walnut-950);
+
+  /* =========================================================
+     TEXT COLORS (MAPPED TO WALNUT SYSTEM)
+  ========================================================= */
+
+  --color-text-primary: var(--color-walnut-50);
+  --color-text-secondary: var(--color-walnut-100);
+  --color-text-muted: var(--color-walnut-200);
+  --color-text-disabled: var(--color-walnut-400);
+  --color-text-dark: var(--color-walnut-950);
 
   /* =========================================================
      BACKGROUND COLORS
   ========================================================= */
-  --color-bg-primary: rgb(10 11 25);
-  --color-bg-secondary: rgb(15 16 36);
-  --color-bg-tertiary: rgb(30 31 72);
-  --color-bg-surface: rgb(237 237 248);
-  --color-bg-card: rgb(219 220 240);
-  --color-bg-modal: rgb(12 13 30);
-  --color-bg-hover: rgb(30 31 72);
-  --color-bg-active: rgb(44 47 109);
-  --color-bg-disabled: rgb(183 184 225);
+
+  --color-bg-primary: var(--color-walnut-950);
+  --color-bg-secondary: var(--color-walnut-900);
+  --color-bg-tertiary: var(--color-walnut-800);
+  --color-bg-surface: var(--color-walnut-50);
+  --color-bg-card: var(--color-walnut-100);
+  --color-bg-modal: rgb(28 18 0);
+  --color-bg-hover: var(--color-walnut-800);
+  --color-bg-active: var(--color-walnut-700);
+  --color-bg-disabled: var(--color-walnut-200);
 
   /* =========================================================
      BORDER COLORS
   ========================================================= */
-  --color-border-primary: rgb(74 78 181);
-  --color-border-secondary: rgb(110 113 196);
-  --color-border-muted: rgb(146 149 211);
-  --color-border-dark: rgb(30 31 72);
-  --color-border-focus: rgb(59 62 145);
+
+  --color-border-primary: var(--color-walnut-500);
+  --color-border-secondary: var(--color-walnut-400);
+  --color-border-muted: var(--color-walnut-300);
+  --color-border-dark: var(--color-walnut-800);
+  --color-border-focus: var(--color-walnut-600);
 
   /* =========================================================
      BUTTON COLORS
   ========================================================= */
-  --color-button-primary: rgb(74 78 181);
-  --color-button-primary-hover: rgb(59 62 145);
-  --color-button-primary-active: rgb(44 47 109);
-  --color-button-primary-disabled: rgb(146 149 211);
 
-  --color-button-secondary: rgb(183 184 225);
-  --color-button-secondary-hover: rgb(146 149 211);
-  --color-button-secondary-active: rgb(110 113 196);
-  --color-button-secondary-disabled: rgb(219 220 240);
+  --color-button-primary: var(--color-walnut-600);
+  --color-button-primary-hover: var(--color-walnut-700);
+  --color-button-primary-active: var(--color-walnut-800);
+  --color-button-primary-disabled: var(--color-walnut-200);
+
+  --color-button-secondary: var(--color-walnut-50);
+  --color-button-secondary-hover: var(--color-walnut-100);
+  --color-button-secondary-active: var(--color-walnut-200);
+  --color-button-secondary-disabled: var(--color-walnut-200);
 
   --color-button-tertiary: transparent;
-  --color-button-tertiary-hover: rgb(219 220 240);
-  --color-button-tertiary-active: rgb(183 184 225);
-  --color-button-tertiary-border: rgb(74 78 181);
+  --color-button-tertiary-hover: var(--color-walnut-50);
+  --color-button-tertiary-active: var(--color-walnut-100);
+  --color-button-tertiary-border: var(--color-walnut-600);
 
   /* =========================================================
      ACCENT COLORS
   ========================================================= */
-  --color-accent-primary: rgb(74 78 181);
-  --color-accent-secondary: rgb(110 113 196);
-  --color-accent-soft: rgb(219 220 240);
-  --color-accent-dark: rgb(30 31 72);
+
+  --color-accent-primary: var(--color-walnut-500);
+  --color-accent-secondary: var(--color-walnut-400);
+  --color-accent-soft: var(--color-walnut-100);
+  --color-accent-dark: var(--color-walnut-800);
 
   /* =========================================================
-     STATUS COLORS
+     STATUS COLORS (HARMONIZED WITH WARM THEME)
   ========================================================= */
+
   --color-success: rgb(34 197 94);
-  --color-warning: rgb(245 158 11);
+  --color-warning: var(--color-walnut-400);
   --color-danger: rgb(239 68 68);
   --color-error: rgb(220 38 38);
   --color-info: rgb(59 130 246);
@@ -83,52 +105,59 @@
   /* =========================================================
      INPUT COLORS
   ========================================================= */
-  --color-input-bg: rgb(237 237 248);
-  --color-input-border: rgb(146 149 211);
-  --color-input-border-focus: rgb(74 78 181);
-  --color-input-placeholder: rgb(110 113 196);
-  --color-input-text: rgb(15 16 36);
+
+  --color-input-bg: var(--color-walnut-50);
+  --color-input-border: var(--color-walnut-200);
+  --color-input-border-focus: var(--color-walnut-500);
+  --color-input-placeholder: var(--color-walnut-300);
+  --color-input-text: var(--color-walnut-950);
 
   /* =========================================================
      SIDEBAR COLORS
   ========================================================= */
-  --color-sidebar-bg: rgb(10 11 25);
-  --color-sidebar-item: rgb(219 220 240);
-  --color-sidebar-item-hover: rgb(30 31 72);
-  --color-sidebar-item-active: rgb(44 47 109);
-  --color-sidebar-text: rgb(237 237 248);
+
+  --color-sidebar-bg: var(--color-walnut-950);
+  --color-sidebar-item: var(--color-walnut-100);
+  --color-sidebar-item-hover: var(--color-walnut-800);
+  --color-sidebar-item-active: var(--color-walnut-700);
+  --color-sidebar-text: var(--color-walnut-50);
 
   /* =========================================================
      NAVBAR COLORS
   ========================================================= */
-  --color-navbar-bg: rgb(15 16 36);
-  --color-navbar-border: rgb(30 31 72);
-  --color-navbar-text: rgb(237 237 248);
+
+  --color-navbar-bg: var(--color-walnut-900);
+  --color-navbar-border: var(--color-walnut-800);
+  --color-navbar-text: var(--color-walnut-50);
 
   /* =========================================================
      TABLE COLORS
   ========================================================= */
-  --color-table-header: rgb(30 31 72);
-  --color-table-row: rgb(237 237 248);
-  --color-table-row-hover: rgb(219 220 240);
-  --color-table-border: rgb(183 184 225);
+
+  --color-table-header: var(--color-walnut-800);
+  --color-table-row: var(--color-walnut-50);
+  --color-table-row-hover: var(--color-walnut-100);
+  --color-table-border: var(--color-walnut-200);
 
   /* =========================================================
-     SHADOWS (blue-indigo twilight tinted)
+     SHADOWS (WARM ORANGE TINT)
   ========================================================= */
-  --shadow-primary: 0 4px 12px rgba(74, 78, 181, 0.25);
-  --shadow-secondary: 0 4px 20px rgba(30, 31, 72, 0.3);
-  --shadow-card: 0 2px 10px rgba(10, 11, 25, 0.2);
+
+  --shadow-primary: 0 4px 12px rgba(255, 145, 0, 0.25);
+  --shadow-secondary: 0 4px 20px rgba(51, 29, 0, 0.35);
+  --shadow-card: 0 2px 10px rgba(36, 20, 0, 0.25);
 
   /* =========================================================
      OVERLAY COLORS
   ========================================================= */
-  --color-overlay-dark: rgba(10, 11, 25, 0.75);
-  --color-overlay-light: rgba(237, 237, 248, 0.6);
+
+  --color-overlay-dark: rgba(36, 20, 0, 0.75);
+  --color-overlay-light: rgba(255, 244, 229, 0.6);
 
   /* =========================================================
      OPACITY SCALE
   ========================================================= */
+
   --opacity-disabled: 0.45;
   --opacity-muted: 0.65;
   --opacity-soft: 0.85;
@@ -137,21 +166,23 @@
   /* =========================================================
      INDUSTRIAL UI SPECIAL COLORS
   ========================================================= */
-  --color-kiosk-bg: rgb(8 9 20);
-  --color-kiosk-border: rgb(44 47 109);
-  --color-kiosk-glow: rgba(74, 78, 181, 0.35);
 
-  --color-live-indicator: rgb(74 78 181);
+  --color-kiosk-bg: var(--color-walnut-950);
+  --color-kiosk-border: var(--color-walnut-700);
+  --color-kiosk-glow: rgba(255, 145, 0, 0.35);
+
+  --color-live-indicator: var(--color-walnut-500);
   --color-security-alert: rgb(239 68 68);
-  --color-geofence-warning: rgb(245 158 11);
+  --color-geofence-warning: var(--color-walnut-400);
 
   /* =========================================================
      AI ASSISTANT COLORS
   ========================================================= */
-  --color-ai-bg: rgb(12 13 30);
-  --color-ai-message-user: rgb(44 47 109);
-  --color-ai-message-system: rgb(237 237 248);
-  --color-ai-border: rgb(74 78 181);
+
+  --color-ai-bg: var(--color-walnut-950);
+  --color-ai-message-user: var(--color-walnut-700);
+  --color-ai-message-system: var(--color-walnut-50);
+  --color-ai-border: var(--color-walnut-500);
 }
 
 body {
@@ -175,15 +206,15 @@ html, body, pre, div, section {
 /* Glassmorphism custom panel styling */
 .glass-panel {
   backdrop-filter: blur(16px);
-  background: rgba(15, 16, 36, 0.7);
-  border: 1px solid rgba(74, 78, 181, 0.15);
-  box-shadow: 0 8px 32px 0 rgba(10, 11, 25, 0.37);
+  background: rgba(36, 20, 0, 0.75);
+  border: 1px solid rgba(255, 145, 0, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(36, 20, 0, 0.37);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(74, 78, 181, 0.3);
-  box-shadow: 0 12px 40px 0 rgba(74, 78, 181, 0.1);
+  border-color: rgba(255, 145, 0, 0.35);
+  box-shadow: 0 12px 40px 0 rgba(255, 145, 0, 0.15);
 }
 
 /* Kiosk mode console container */
@@ -200,7 +231,7 @@ html, body, pre, div, section {
   display: block;
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.05), rgba(0, 0, 255, 0.03));
   z-index: 2;
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
@@ -208,16 +239,290 @@ html, body, pre, div, section {
 
 /* Glowing text effects */
 .brand-glow {
-  text-shadow: 0 0 8px rgba(74, 78, 181, 0.6);
+  text-shadow: 0 0 8px rgba(255, 145, 0, 0.6);
 }
 
 .brand-glow-strong {
-  text-shadow: 0 0 15px rgba(74, 78, 181, 0.9), 0 0 2px rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 15px rgba(255, 145, 0, 0.9), 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
-/* Custom interactive transition tags */
-
+.brand-glow-error {
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
 
 .mobile-nav-transition {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =========================================================
+   GAMIFIED KEYFRAME ANIMATIONS & CLASSES
+========================================================= */
+
+@keyframes oxygen-float {
+  0% {
+    transform: translateY(100%) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  70% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-100px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.oxygen-particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255, 211, 153, 0.4) 0%, rgba(255, 145, 0, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: oxygen-float 8s infinite linear;
+}
+
+.oxygen-bubble-1 {
+  left: 25%;
+  width: 12px;
+  height: 12px;
+  animation-delay: 0s;
+  animation-duration: 6s;
+  bottom: 0;
+}
+
+.oxygen-bubble-2 {
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  animation-delay: 1.5s;
+  animation-duration: 8s;
+  bottom: 0;
+}
+
+.oxygen-bubble-3 {
+  left: 75%;
+  width: 16px;
+  height: 16px;
+  animation-delay: 3s;
+  animation-duration: 7s;
+  bottom: 0;
+}
+
+.rain-drop-1 {
+  animation-delay: 0.1s;
+}
+
+.rain-drop-2 {
+  animation-delay: 0.2s;
+}
+
+@keyframes leaf-sway {
+  0%, 100% {
+    transform: rotate(-5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(5deg) translateY(-4px);
+  }
+}
+
+.sway-element {
+  animation: leaf-sway 4s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes pulse-reactor {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2), inset 0 0 15px rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(239, 68, 68, 0.5), inset 0 0 25px rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.7);
+  }
+}
+
+.reactor-critical {
+  animation: pulse-reactor 1.5s infinite ease-in-out;
+}
+
+@keyframes shake-screen {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-4px, 2px) rotate(-0.5deg); }
+  40% { transform: translate(3px, -1px) rotate(0.5deg); }
+  60% { transform: translate(-3px, -2px) rotate(-0.3deg); }
+  80% { transform: translate(2px, 2px) rotate(0.3deg); }
+}
+
+.shake-active {
+  animation: shake-screen 0.4s ease-in-out;
+}
+
+@keyframes card-sparkle {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.hologram-card {
+  background: linear-gradient(135deg, var(--color-walnut-950) 0%, var(--color-walnut-900) 40%, rgba(255, 145, 0, 0.1) 75%, var(--color-walnut-950) 100%);
+  background-size: 300% 300%;
+  animation: card-sparkle 10s ease infinite;
+  border: 1px solid rgba(255, 145, 0, 0.25);
+  box-shadow: 0 10px 40px rgba(36, 20, 0, 0.5), 0 0 30px rgba(255, 145, 0, 0.05);
+}
+
+.hologram-card:hover {
+  border-color: rgba(255, 189, 102, 0.6);
+  box-shadow: 0 15px 45px rgba(36, 20, 0, 0.6), 0 0 40px rgba(255, 145, 0, 0.2);
+}
+
+/* Custom glowing progress bars */
+.progress-glow-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-glow-bar::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: bar-glow-slide 2.5s infinite linear;
+}
+
+@keyframes bar-glow-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes stroke-flow {
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.flow-active {
+  stroke-dasharray: 5 5;
+  animation: stroke-flow 0.8s infinite linear;
+}
+
+/* =========================================================
+   PREMIUM CORE WALNUT BUTTON COMPONENT SPEC
+========================================================= */
+
+.btn-primary {
+  background-color: var(--color-button-primary);
+  color: #ffffff !important;
+  border: none;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 2rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-button-primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  background-color: var(--color-button-primary-active);
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background-color: var(--color-button-primary-disabled);
+  color: rgba(255, 255, 255, 0.55) !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background-color: var(--color-button-secondary);
+  color: var(--color-walnut-800) !important;
+  border: none;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 2rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-button-secondary-hover);
+  color: var(--color-walnut-900) !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background-color: var(--color-button-secondary-active);
+  color: var(--color-walnut-950) !important;
+  transform: translateY(0);
+}
+
+.btn-secondary:disabled {
+  background-color: var(--color-button-secondary-disabled);
+  color: var(--color-walnut-400) !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.btn-tertiary {
+  background-color: transparent;
+  color: var(--color-walnut-600) !important;
+  border: 1.5px solid var(--color-button-tertiary-border);
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.75rem 2rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-tertiary:hover:not(:disabled) {
+  background-color: var(--color-button-tertiary-hover);
+  color: var(--color-walnut-700) !important;
+  border-color: var(--color-walnut-700);
+  transform: translateY(-1px);
+}
+
+.btn-tertiary:active:not(:disabled) {
+  background-color: var(--color-button-tertiary-active);
+  color: var(--color-walnut-800) !important;
+  border-color: var(--color-walnut-800);
+  transform: translateY(0);
+}
+
+.btn-tertiary:disabled {
+  background-color: transparent;
+  color: var(--color-walnut-300) !important;
+  border-color: var(--color-walnut-200);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.55;
 }

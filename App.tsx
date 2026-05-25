@@ -1,439 +1,397 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { INITIAL_CONFIGS, MODULE_IDS } from './constants';
-import { GIT_COMMANDS_DATABASE } from './gitCommands';
+import { playSynthSound } from './audio';
+import { TeamMember, KioskLog, CommitItem, BadgeItem, CampaignItem } from './types';
 
-// Custom interfaces for SaaS seats and logs
-interface TeamMember {
-  email: string;
-  role: 'Admin' | 'Developer' | 'Security';
-  status: 'Active' | 'Pending';
-  avatar: string;
-}
+// Import separated modular subcomponents
+import { DigitalCanopy } from './components/DigitalCanopy';
+import { CertificateCard } from './components/CertificateCard';
+import { LandingPage } from './components/LandingPage';
+import { CampaignsView } from './components/CampaignsView';
+import { ReactorView } from './components/ReactorView';
+import { BadgesView } from './components/BadgesView';
+import { GlossaryView } from './components/GlossaryView';
+import { ScopesView } from './components/ScopesView';
+import { RegistryEditorView } from './components/RegistryEditorView';
+import { TeamWorkspaceView } from './components/TeamWorkspaceView';
+import { DiagnosticsView } from './components/DiagnosticsView';
+import { CheatsheetView } from './components/CheatsheetView';
+import { SandboxPipeline } from './components/SandboxPipeline';
 
-interface KioskLog {
-  id: string;
-  time: string;
-  msg: string;
-  type: 'success' | 'info' | 'warn';
-}
+const ALL_30_QUESTIONS = [
+  {
+    q: "If you set user.name in both local .git/config and global ~/.gitconfig, which value does Git use when committing in that repository?",
+    opts: [
+      "A) Local value overrides Global",
+      "B) Global value overrides Local",
+      "C) System value overrides both",
+      "D) It throws a configuration breach error"
+    ],
+    ans: 0
+  },
+  {
+    q: "Between global ~/.gitconfig and system-wide /etc/gitconfig, which configuration file has higher priority and overrides the other?",
+    opts: [
+      "A) Global overrides System",
+      "B) System overrides Global",
+      "C) They merge with equal priority",
+      "D) Neither, Git ignores both files"
+    ],
+    ans: 0
+  },
+  {
+    q: "You run: git -c user.name='AdHoc' commit. How does Git resolve the username for this specific commit?",
+    opts: [
+      "A) Uses 'AdHoc' because CLI parameter overrides config files",
+      "B) Uses Local config file setting",
+      "C) Uses Global config file setting",
+      "D) Fails due to precedence syntax violation"
+    ],
+    ans: 0
+  },
+  {
+    q: "If GIT_AUTHOR_NAME environment variable is set, how does it interact with user.name configured in .git/config?",
+    opts: [
+      "A) GIT_AUTHOR_NAME environment variable overrides user.name",
+      "B) user.name configuration overrides GIT_AUTHOR_NAME",
+      "C) Both are joined together as one string",
+      "D) Git prompts the operator to resolve the name manually"
+    ],
+    ans: 0
+  },
+  {
+    q: "Where is the local repository-specific configuration file stored by default?",
+    opts: [
+      "A) Within the .git/config file in the repository root",
+      "B) In the user home directory ~/.gitconfig",
+      "C) In the machine-wide /etc/gitconfig settings",
+      "D) In the index cache database .git/index"
+    ],
+    ans: 0
+  },
+  {
+    q: "On Unix-like operating systems, what is the default file path for your global Git configurations?",
+    opts: [
+      "A) ~/.gitconfig",
+      "B) /etc/gitconfig",
+      "C) .git/config",
+      "D) ~/.config/git/system"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which command shows both the values and the specific config file paths where those values are defined?",
+    opts: [
+      "A) git config --list --show-origin",
+      "B) git config --get-all",
+      "C) git show-branch --verbose",
+      "D) git config --where"
+    ],
+    ans: 0
+  },
+  {
+    q: "What command opens your default terminal text editor to modify the global Git configuration file directly?",
+    opts: [
+      "A) git config --global --edit",
+      "B) git config --global --write",
+      "C) git edit --global --text",
+      "D) git config --system --open"
+    ],
+    ans: 0
+  },
+  {
+    q: "How do you completely remove a configuration key (e.g. user.email) from your global settings?",
+    opts: [
+      "A) git config --global --unset user.email",
+      "B) git config --global --remove user.email",
+      "C) git config --global --delete user.email",
+      "D) git config --global --clear user.email"
+    ],
+    ans: 0
+  },
+  {
+    q: "If a config key has multiple values defined, which command safely unsets all of them at once?",
+    opts: [
+      "A) git config --global --unset-all key",
+      "B) git config --global --unset key",
+      "C) git config --global --delete-all key",
+      "D) git config --global --purge key"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which configuration key determines the default editor used by Git for writing commit messages?",
+    opts: [
+      "A) core.editor",
+      "B) git.editor",
+      "C) user.editor",
+      "D) terminal.editor"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which config parameter resolves line ending conversion differences between Windows and macOS/Linux systems?",
+    opts: [
+      "A) core.autocrlf",
+      "B) core.eol",
+      "C) core.lineendings",
+      "D) core.cr"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which parameter configures the default branch name used when initializing a brand new repository with git init?",
+    opts: [
+      "A) init.defaultBranch",
+      "B) core.defaultBranch",
+      "C) git.defaultBranch",
+      "D) init.branchName"
+    ],
+    ans: 0
+  },
+  {
+    q: "What occurs under the hood when you run git add . on your working directory files?",
+    opts: [
+      "A) Files are copied to the Index/Staging area and tracked",
+      "B) A commit is created instantly in the local database",
+      "C) Files are uploaded to the remote server branch",
+      "D) Files are compiled into compiled binaries"
+    ],
+    ans: 0
+  },
+  {
+    q: "In a git status output, what visual category displays files that have been modified but NOT staged?",
+    opts: [
+      "A) 'Changes not staged for commit'",
+      "B) 'Changes to be committed'",
+      "C) 'Untracked files'",
+      "D) 'Diverged branches'"
+    ],
+    ans: 0
+  },
+  {
+    q: "You deleted a file locally. Which command records this file deletion directly in the staging index?",
+    opts: [
+      "A) git rm file",
+      "B) git clean file",
+      "C) git checkout file",
+      "D) git purge file"
+    ],
+    ans: 0
+  },
+  {
+    q: "What does a commit represent in Git's Directed Acyclic Graph (DAG) database history?",
+    opts: [
+      "A) An immutable cryptographic snapshot of the staged Index files",
+      "B) A temporary patch backup that expires in 30 days",
+      "C) A list of remote server file links",
+      "D) An alias configuration variable"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which flag allows you to replace your last commit message or add newly staged files to it directly?",
+    opts: [
+      "A) --amend",
+      "B) --modify",
+      "C) --replace",
+      "D) --override"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which command shows a condensed, single-line log of all your repository's commits and hashes?",
+    opts: [
+      "A) git log --oneline",
+      "B) git log --condensed",
+      "C) git log --short",
+      "D) git log --hash"
+    ],
+    ans: 0
+  },
+  {
+    q: "What does 'origin' represent in a standard command like git push origin main?",
+    opts: [
+      "A) An alias link pointing to the remote repository upstream URL",
+      "B) The name of your local storage drive",
+      "C) The initial commit hash metadata",
+      "D) The default user profile configuration"
+    ],
+    ans: 0
+  },
+  {
+    q: "What standard action takes place when you execute git push origin branchName?",
+    opts: [
+      "A) Uploads local commit database history to the remote repository branch",
+      "B) Stages all working directory changes in the index",
+      "C) Resets the local branch configuration values",
+      "D) Clones a remote repository URL locally"
+    ],
+    ans: 0
+  },
+  {
+    q: "What is the primary difference between git fetch and git pull?",
+    opts: [
+      "A) fetch downloads metadata only; pull downloads and merges it instantly",
+      "B) pull is secure; fetch is insecure",
+      "C) fetch deletes local files; pull preserves them",
+      "D) There is no structural difference"
+    ],
+    ans: 0
+  },
+  {
+    q: "Your workspace has multiple untracked files. How do you delete them all recursively and safely?",
+    opts: [
+      "A) git clean -fd",
+      "B) git reset --hard",
+      "C) git rm --cached .",
+      "D) git restore --all"
+    ],
+    ans: 0
+  },
+  {
+    q: "How do you discard all local unstaged modifications in your working files, reverting them back to the last commit?",
+    opts: [
+      "A) git restore .",
+      "B) git commit --revert",
+      "C) git clean -x",
+      "D) git push --force"
+    ],
+    ans: 0
+  },
+  {
+    q: "You accidentally added a secret file to the Staging Index. Which command unstages it safely without discarding edits?",
+    opts: [
+      "A) git reset secret.txt",
+      "B) git rm secret.txt",
+      "C) git checkout secret.txt",
+      "D) git revert secret.txt"
+    ],
+    ans: 0
+  },
+  {
+    q: "If a username is configured both in the system scope and in the local scope, which scope configuration wins?",
+    opts: [
+      "A) Local config scope overrides System config scope",
+      "B) System config scope overrides Local config scope",
+      "C) Both are combined in order",
+      "D) The configuration throws an environment error"
+    ],
+    ans: 0
+  },
+  {
+    q: "What causes a merge conflict in Git?",
+    opts: [
+      "A) Competing changes made to the exact same line of a file in different branches",
+      "B) A mismatch in the user.email configurations",
+      "C) Having too many local commits in history",
+      "D) Push attempts to a branch with a different name"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which Git configuration parameter defines a global file path for your user-wide pattern exclusion ignore list?",
+    opts: [
+      "A) core.excludesfile",
+      "B) core.ignorefile",
+      "C) git.ignorepath",
+      "D) excludes.global"
+    ],
+    ans: 0
+  },
+  {
+    q: "Which parameter controls whether Git tracks executable file permission changes (+x) in your index?",
+    opts: [
+      "A) core.fileMode",
+      "B) core.permissions",
+      "C) git.trackpermissions",
+      "D) core.exe"
+    ],
+    ans: 0
+  },
+  {
+    q: "How do you verify only your global configurations in your terminal?",
+    opts: [
+      "A) git config --global --list",
+      "B) git config --list --system",
+      "C) git config --local --get",
+      "D) git config --show"
+    ],
+    ans: 0
+  }
+];
 
-const GitArchitectureVisualizer: React.FC = () => {
+export default function App() {
+  const [showDashboard, setShowDashboard] = useState<boolean>(() => {
+    return sessionStorage.getItem('git_show_dashboard') === 'true';
+  });
+  const [activeModule, setActiveModule] = useState(MODULE_IDS.INTRO);
+  const [configs, setConfigs] = useState<{ [key: string]: string }>(() => {
+    const saved = sessionStorage.getItem('git_configs');
+    return saved ? JSON.parse(saved) : INITIAL_CONFIGS;
+  });
+  const [mobileStepperOpen, setMobileStepperOpen] = useState(false);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const circleRef = useRef<HTMLDivElement>(null);
+  const [dragStartAngle, setDragStartAngle] = useState(0);
+  const [dragStartRotation, setDragStartRotation] = useState(0);
+
+  // sound toggle state
+  const [soundsOn, setSoundsOn] = useState(true);
+
+  // SaaS Team seats
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+    { email: 'godfrey@orion-os.org', role: 'Admin', status: 'Active', avatar: 'GT' },
+    { email: 'prithvi@orion-os.org', role: 'Developer', status: 'Active', avatar: 'PR' },
+    { email: 'harihar@orion-os.org', role: 'Security', status: 'Active', avatar: 'HR' }
+  ]);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState<'Admin' | 'Developer' | 'Security'>('Developer');
+
+  // =========================================================
+  // ⚙️ GAMIFICATION STATES
+  // =========================================================
+  const [xp, setXp] = useState<number>(() => {
+    const saved = sessionStorage.getItem('git_xp');
+    return saved ? Number(saved) : 50;
+  });
+  const [level, setLevel] = useState<number>(() => {
+    const saved = sessionStorage.getItem('git_level');
+    return saved ? Number(saved) : 1;
+  });
+  const [masteredMissions, setMasteredMissions] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('git_mastered_missions');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [earnedBadges, setEarnedBadges] = useState<string[]>(() => {
+    const saved = sessionStorage.getItem('git_earned_badges');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // checklist state helpers
+  const [hasUnsetConfig, setHasUnsetConfig] = useState<boolean>(() => {
+    return sessionStorage.getItem('git_unset_config') === 'true';
+  });
+
+  // screen shake controller on error
+  const [shakeOn, setShakeOn] = useState(false);
+
+  // visual pipeline states
   const [animationState, setAnimationState] = useState<'idle' | 'adding' | 'committing' | 'pushing'>('idle');
   const [workingFiles, setWorkingFiles] = useState<string[]>(['index.js', 'styles.css']);
   const [stagedFiles, setStagedFiles] = useState<string[]>([]);
-  const [localCommits, setLocalCommits] = useState<{ hash: string; msg: string }[]>([]);
-  const [remoteCommits, setRemoteCommits] = useState<{ hash: string; msg: string }[]>([]);
+  const [localCommits, setLocalCommits] = useState<CommitItem[]>([]);
+  const [remoteCommits, setRemoteCommits] = useState<CommitItem[]>([]);
+  const [hasResetPerformed, setHasResetPerformed] = useState<boolean>(() => {
+    return sessionStorage.getItem('git_reset_performed') === 'true';
+  });
   const [visualLogs, setVisualLogs] = useState<string[]>([
     'SYSTEM ONLINE // Audit sequence initialized.',
     'Working Directory holds modified files. Run [git add] to catalog snapshots.'
   ]);
 
-  const addLog = (msg: string) => {
-    setVisualLogs(prev => [msg, ...prev].slice(0, 5));
-  };
-
-  const handleGitAdd = () => {
-    if (workingFiles.length === 0) {
-      addLog('WARNING: No modified files found in Working Directory sandbox.');
-      return;
-    }
-    setAnimationState('adding');
-    addLog('Executing [git add .] -> Indexing files into binary index tree...');
-    
-    setTimeout(() => {
-      setStagedFiles(prev => [...prev, ...workingFiles]);
-      setWorkingFiles([]);
-      setAnimationState('idle');
-      addLog('SUCCESS: Files staging complete. Snapshot registered inside index.');
-    }, 1800);
-  };
-
-  const handleGitCommit = () => {
-    if (stagedFiles.length === 0) {
-      addLog('WARNING: Staging Area is empty. Staging must be populated via [git add] first.');
-      return;
-    }
-    setAnimationState('committing');
-    addLog('Executing [git commit -m "feat: core"] -> Compiling trees and writing objects...');
-
-    setTimeout(() => {
-      const newHash = Math.random().toString(16).substring(2, 7).toUpperCase();
-      const newCommit = { hash: newHash, msg: 'feat: core auth' };
-      setLocalCommits(prev => [...prev, newCommit]);
-      setStagedFiles([]);
-      setAnimationState('idle');
-      addLog(`SUCCESS: Commit created. HASH: [${newHash}] -> DAG tree updated.`);
-    }, 1800);
-  };
-
-  const handleGitPush = () => {
-    if (localCommits.length === 0) {
-      addLog('WARNING: Local Repository holds 0 commits. Commit changes locally first.');
-      return;
-    }
-    setAnimationState('pushing');
-    addLog('Executing [git push origin main] -> Authenticating SSH and transferring packfiles...');
-
-    setTimeout(() => {
-      setRemoteCommits(prev => [...prev, ...localCommits]);
-      setLocalCommits([]);
-      setAnimationState('idle');
-      addLog('SUCCESS: Remote synchronized. Upstream origins and branches updated successfully.');
-    }, 1800);
-  };
-
-  const handleReset = () => {
-    setWorkingFiles(['index.js', 'styles.css']);
-    setStagedFiles([]);
-    setLocalCommits([]);
-    setRemoteCommits([]);
-    setAnimationState('idle');
-    setVisualLogs([
-      'PIPELINE RESET // Environment returned to default sandbox state.',
-      'Working Directory holds modified files. Run [git add] to catalog snapshots.'
-    ]);
-  };
-
-  return (
-    <div className="space-y-6 bg-[#0c0d1e]/60 border border-[#1e1f48] rounded-[2.5rem] p-6 sm:p-10 relative overflow-hidden">
-      <style>{`
-        @keyframes dashflow {
-          to {
-            stroke-dashoffset: -40;
-          }
-        }
-        .animate-dashflow {
-          stroke-dasharray: 8, 4;
-          animation: dashflow 1.2s linear infinite;
-        }
-        @keyframes dotflow {
-          0% { left: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { left: 100%; opacity: 0; }
-        }
-        .neon-dot {
-          animation: dotflow 1.8s ease-in-out infinite;
-        }
-      `}</style>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#1e1f48]/60 pb-6">
-        <div>
-          <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-            <span className="text-emerald-500 animate-pulse">🧬</span> How Git Works: Live Architecture Pipeline
-          </h3>
-          <p className="text-xs text-emerald-100/50 mt-1 max-w-xl">
-            Interact with the visual circuit below. Trigger commands to see code snapshots serialize, commit locally, and synchronize upstream.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button 
-            onClick={handleGitAdd}
-            disabled={animationState !== 'idle'}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            git add .
-          </button>
-          <button 
-            onClick={handleGitCommit}
-            disabled={animationState !== 'idle'}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            git commit
-          </button>
-          <button 
-            onClick={handleGitPush}
-            disabled={animationState !== 'idle'}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            git push
-          </button>
-          <button 
-            onClick={handleReset}
-            disabled={animationState !== 'idle'}
-            className="px-3 py-2 bg-transparent hover:bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-
-      {/* Visual Pipeline Circuit */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative py-4">
-        {/* Stage 1: Working Directory */}
-        <div className="flex flex-col justify-between p-6 bg-slate-950/40 border border-[#1e1f48] rounded-2xl relative space-y-4">
-          <div>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Stage 01 // Local Disk</span>
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Working Directory</h4>
-            <p className="text-[10px] text-emerald-100/30 leading-relaxed mt-1">Your local sandbox workspace folder on disk where files are modified.</p>
-          </div>
-          <div className="bg-[#05060f] p-3 rounded-xl border border-slate-900 min-h-[80px] space-y-2">
-            <span className="text-[8px] font-mono text-emerald-700 tracking-widest block uppercase font-bold border-b border-slate-900 pb-1">Modified Sandbox Files</span>
-            {workingFiles.map(f => (
-              <div key={f} className="flex items-center justify-between text-[9px] font-mono text-yellow-500">
-                <span>📁 {f}</span>
-                <span className="px-1 bg-yellow-500/10 rounded uppercase text-[7px] font-bold">modified</span>
-              </div>
-            ))}
-            {workingFiles.length === 0 && (
-              <span className="text-[9px] font-mono text-emerald-800 italic block pt-4 text-center">Clean Workspace</span>
-            )}
-          </div>
-        </div>
-
-        {/* Stage 2: Staging Area */}
-        <div className="flex flex-col justify-between p-6 bg-slate-950/40 border border-[#1e1f48] rounded-2xl relative space-y-4">
-          {/* Animated Connecting neon conduit line from 1 to 2 */}
-          <div className="hidden md:block absolute -left-8 top-1/2 w-8 h-[2px] bg-[#1e1f48] overflow-hidden">
-            {animationState === 'adding' && (
-              <div className="absolute top-0 bottom-0 w-2.5 bg-emerald-500 neon-dot rounded-full"></div>
-            )}
-          </div>
-          <div>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Stage 02 // Index Area</span>
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Staging Area</h4>
-            <p className="text-[10px] text-emerald-100/30 leading-relaxed mt-1">A lightweight binary index snapshot that prepares changes for commits.</p>
-          </div>
-          <div className="bg-[#05060f] p-3 rounded-xl border border-slate-900 min-h-[80px] space-y-2">
-            <span className="text-[8px] font-mono text-emerald-700 tracking-widest block uppercase font-bold border-b border-slate-900 pb-1">Prepared Index Snapshots</span>
-            {stagedFiles.map(f => (
-              <div key={f} className="flex items-center justify-between text-[9px] font-mono text-emerald-400">
-                <span>📁 {f}</span>
-                <span className="px-1 bg-emerald-400/10 rounded uppercase text-[7px] font-bold">staged</span>
-              </div>
-            ))}
-            {stagedFiles.length === 0 && (
-              <span className="text-[9px] font-mono text-emerald-800 italic block pt-4 text-center">Index Empty</span>
-            )}
-          </div>
-        </div>
-
-        {/* Stage 3: Local Repository */}
-        <div className="flex flex-col justify-between p-6 bg-slate-950/40 border border-[#1e1f48] rounded-2xl relative space-y-4">
-          {/* Animated Connecting neon conduit line from 2 to 3 */}
-          <div className="hidden md:block absolute -left-8 top-1/2 w-8 h-[2px] bg-[#1e1f48] overflow-hidden">
-            {animationState === 'committing' && (
-              <div className="absolute top-0 bottom-0 w-2.5 bg-emerald-500 neon-dot rounded-full"></div>
-            )}
-          </div>
-          <div>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Stage 03 // Local History</span>
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Local Repository</h4>
-            <p className="text-[10px] text-emerald-100/30 leading-relaxed mt-1">The secure immutable DAG storage directory (.git) holding commit hashes.</p>
-          </div>
-          <div className="bg-[#05060f] p-3 rounded-xl border border-slate-900 min-h-[80px] space-y-2">
-            <span className="text-[8px] font-mono text-emerald-700 tracking-widest block uppercase font-bold border-b border-slate-900 pb-1">Commit DAG Tree</span>
-            {localCommits.map(c => (
-              <div key={c.hash} className="flex items-center justify-between text-[9px] font-mono text-blue-400">
-                <span>📦 HASH: {c.hash}</span>
-                <span className="px-1 bg-blue-400/10 rounded uppercase text-[7px] font-bold">committed</span>
-              </div>
-            ))}
-            {localCommits.length === 0 && (
-              <span className="text-[9px] font-mono text-emerald-800 italic block pt-4 text-center">0 Local Commits</span>
-            )}
-          </div>
-        </div>
-
-        {/* Stage 4: Remote Repository */}
-        <div className="flex flex-col justify-between p-6 bg-[#0a0b19]/80 border border-[#1e1f48] rounded-2xl relative space-y-4">
-          {/* Animated Connecting neon conduit line from 3 to 4 */}
-          <div className="hidden md:block absolute -left-8 top-1/2 w-8 h-[2px] bg-[#1e1f48] overflow-hidden">
-            {animationState === 'pushing' && (
-              <div className="absolute top-0 bottom-0 w-2.5 bg-emerald-500 neon-dot rounded-full"></div>
-            )}
-          </div>
-          <div>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">Stage 04 // Upstream Server</span>
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Remote Repository</h4>
-            <p className="text-[10px] text-emerald-100/30 leading-relaxed mt-1">Upstream master system host in the shared cloud (origin/main) for teams.</p>
-          </div>
-          <div className="bg-[#05060f] p-3 rounded-xl border border-slate-900 min-h-[80px] space-y-2">
-            <span className="text-[8px] font-mono text-emerald-700 tracking-widest block uppercase font-bold border-b border-slate-900 pb-1">Cloud Sync Tree</span>
-            {remoteCommits.map(c => (
-              <div key={c.hash} className="flex items-center justify-between text-[9px] font-mono text-pink-400">
-                <span>☁️ HASH: {c.hash}</span>
-                <span className="px-1 bg-pink-400/10 rounded uppercase text-[7px] font-bold">synced</span>
-              </div>
-            ))}
-            {remoteCommits.length === 0 && (
-              <span className="text-[9px] font-mono text-emerald-800 italic block pt-4 text-center">Not Synced</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Terminal audit logger console */}
-      <div className="bg-[#05060f] border border-[#1e1f48] rounded-2xl p-4 font-mono text-[10px] text-emerald-400/80 space-y-1 shadow-inner relative overflow-hidden">
-        <div className="flex justify-between items-center text-[8px] font-bold uppercase tracking-widest text-[#b7b8e1]/30 border-b border-[#1e1f48]/40 pb-2 mb-2">
-          <span>Git Pipeline Logger Console</span>
-          <span className="animate-pulse flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Monitoring</span>
-        </div>
-        {visualLogs.map((log, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <span className="text-emerald-600 font-bold select-none">&gt;&gt;</span>
-            <span>{log}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const LandingPage: React.FC<{ onEnter: () => void }> = ({ onEnter }) => (
-  <main className="min-h-screen bg-[#0a0b19] flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden transition-colors duration-500" role="main">
-    {/* Ambient background visuals */}
-    <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" aria-hidden="true">
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-emerald-900/40 rounded-full blur-[120px] animate-pulse-slow"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px]"></div>
-    </div>
-    
-    <div className="relative z-10 max-w-5xl w-full text-center space-y-12 animate-fadeIn">
-      <header className="space-y-6">
-        <div className="inline-flex items-center px-4 py-2 rounded-full border border-emerald-900/30 bg-emerald-950/20 text-emerald-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
-          Git Learning Hub Platform v4.0
-        </div>
-        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-tighter leading-none">
-          GIT <span className="text-emerald-500 brand-glow">LEARNING HUB</span>
-        </h1>
-        <p className="text-emerald-100/40 text-xs sm:text-base font-medium max-w-2xl mx-auto leading-relaxed">
-          The industrial-grade simulation chamber for version tree diagnostics. Audit active environment namespaces, configure cascade priority parameters, and orchestrate advanced branch rebases.
-        </p>
-      </header>
-
-      {/* Interactive terminal code visualizer */}
-      <div className="w-full max-w-2xl mx-auto rounded-2xl border border-[#1e1f48] bg-[#0c0d1e]/80 backdrop-blur-md p-6 text-left font-mono text-xs text-emerald-400/80 shadow-2xl relative overflow-hidden space-y-3">
-        <div className="flex items-center justify-between border-b border-[#1e1f48]/60 pb-3 mb-4 text-[#b7b8e1]/40">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]/25 border border-[#ef4444]/45"></span>
-            <span className="w-2.5 h-2.5 rounded-full bg-[#eab308]/25 border border-[#eab308]/45"></span>
-            <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]/25 border border-[#22c55e]/45"></span>
-          </div>
-          <span className="text-[9px] uppercase tracking-widest font-black">git-kernel-terminal v4.0</span>
-        </div>
-        <div>
-          <span className="text-emerald-500 font-bold">$</span> <span className="text-white font-bold">git config --global user.name</span> "Orion Engineer"
-        </div>
-        <div className="text-[#b7b8e1]/40 italic">
-          # Config registers global namespace successfully.
-        </div>
-        <div>
-          <span className="text-emerald-500 font-bold">$</span> <span className="text-white font-bold">git config --list --show-origin</span>
-        </div>
-        <div className="text-[#b7b8e1]/50 text-[10px] pl-4 space-y-1">
-          <div>file:/etc/gitconfig      host.sysadmin=active</div>
-          <div>file:~/.gitconfig      user.name=Orion Engineer</div>
-          <div>file:.git/config        repo.priority=override</div>
-        </div>
-        <div className="pt-2 flex items-center justify-between text-[10px] text-emerald-500/50">
-          <span>[Registry State: Pre-Authenticated]</span>
-          <span className="animate-pulse">● Ready</span>
-        </div>
-      </div>
-
-      <nav className="flex flex-col sm:flex-row items-center justify-center gap-4" aria-label="Landing Navigation">
-        <button 
-          onClick={onEnter}
-          aria-label="Enter the command hub dashboard"
-          className="w-full sm:w-auto group relative px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-emerald-950/20"
-        >
-          Enter Academy Workspace
-          <div className="absolute inset-0 rounded-2xl border-2 border-emerald-400/0 group-hover:border-emerald-400/50 transition-all scale-105 opacity-0 group-hover:opacity-100"></div>
-        </button>
-        
-        <a 
-          href="https://training.github.com/downloads/github-git-cheat-sheet.pdf" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="w-full sm:w-auto px-10 py-5 bg-emerald-950/40 hover:bg-emerald-950/60 text-emerald-400 border border-emerald-900/40 font-bold text-xs uppercase tracking-[0.2em] rounded-2xl transition-all flex items-center justify-center gap-3"
-        >
-          SLA Manual
-        </a>
-      </nav>
-
-      {/* Trust Badges */}
-      <div className="space-y-4 pt-6">
-        <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.25em]">Loved by engineering teams at</span>
-        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-10 font-mono text-[10px] text-emerald-100/30 tracking-widest font-black uppercase">
-          <span>Stripe</span>
-          <span>Stellate</span>
-          <span>Vercel</span>
-          <span>linear</span>
-          <span>supaBase</span>
-        </div>
-      </div>
-    </div>
-  </main>
-);
-
-const CertificateCard: React.FC<{ studentName: string }> = ({ studentName }) => (
-  <div className="p-8 md:p-12 rounded-[2.5rem] border-2 border-dashed border-emerald-500/40 bg-gradient-to-br from-[#0c0d1e] to-[#0a0b19] shadow-2xl relative overflow-hidden flex flex-col items-center text-center space-y-6 animate-fadeIn w-full">
-    {/* holographic background light */}
-    <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-[80px]"></div>
-    <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-[80px]"></div>
-    
-    <span className="text-6xl animate-bounce">🏆</span>
-    
-    <header className="space-y-2">
-      <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] brand-glow">Professional Certification</h4>
-      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tighter">GIT MASTER INTEGRITY CREDENTIAL</h3>
-    </header>
-
-    <div className="h-px w-32 bg-emerald-500/30"></div>
-
-    <p className="text-xs text-emerald-100/50 leading-relaxed max-w-md">
-      This document certifies that <strong className="text-emerald-400 font-mono text-sm">{studentName || 'Orion Student'}</strong> has successfully completed the entire interactive version control curriculum, mastered the 3 prioritizations config files, and demonstrated full understanding of command logistics.
-    </p>
-
-    <div className="grid grid-cols-2 gap-8 pt-4 w-full max-w-sm border-t border-emerald-500/10">
-      <div className="text-left space-y-1">
-        <span className="text-[8px] font-bold text-emerald-800 uppercase tracking-widest block">Authorized Signatory</span>
-        <span className="font-mono text-xs text-emerald-500 italic block">/OrionGitLearningHub/</span>
-      </div>
-      <div className="text-right space-y-1">
-        <span className="text-[8px] font-bold text-emerald-800 uppercase tracking-widest block">Credential Verification</span>
-        <span className="font-mono text-[9px] text-emerald-500/70 block">SECURE_REF_HASH:74B51</span>
-      </div>
-    </div>
-
-    <div className="px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-[9px] text-emerald-400 font-mono tracking-widest uppercase">
-      Verification Status: SEALED & SYNCED
-    </div>
-  </div>
-);
-
-const App: React.FC = () => {
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [activeModule, setActiveModule] = useState(MODULE_IDS.INTRO);
-  const [configs, setConfigs] = useState<{ [key: string]: string }>(INITIAL_CONFIGS);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mobileStepperOpen, setMobileStepperOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
-  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
-
-  // SaaS Tiers & Billing States
-
-
-  // SaaS Workspace states
-  const [activeWorkspace, setActiveWorkspace] = useState('Personal Workspace');
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
-
-  // SaaS Team seats
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { email: 'godfrey@orion-os.org', role: 'Admin', status: 'Active', avatar: 'GT' },
-    { email: 'sarah.k@orion-os.org', role: 'Developer', status: 'Active', avatar: 'SK' },
-    { email: 'alex.v@orion-os.org', role: 'Security', status: 'Active', avatar: 'AV' }
-  ]);
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState<'Admin' | 'Developer' | 'Security'>('Developer');
-
-  // Curriculum Pathways Progress
-  const [masteredModules, setMasteredModules] = useState<{ [key: string]: boolean }>({});
-
-  // Kiosk Registry States
+  // Registry form custom states
   const [newRegistryKey, setNewRegistryKey] = useState('');
   const [newRegistryValue, setNewRegistryValue] = useState('');
   const [kioskLogs, setKioskLogs] = useState<KioskLog[]>([
@@ -441,35 +399,119 @@ const App: React.FC = () => {
     { id: '2', time: new Date().toLocaleTimeString(), msg: 'SECURITY: Geofence synchronization operational.', type: 'success' }
   ]);
 
+  // credential seal display
+  const [certificateOpen, setCertificateOpen] = useState(false);
 
+  // =========================================================
+  // 🕹️ REACTOR GAME STATE
+  // =========================================================
+  const [reactorState, setReactorState] = useState<'idle' | 'playing' | 'gameover' | 'victory'>('idle');
+  const [reactorTemp, setReactorTemp] = useState(50);
+  const [reactorTimer, setReactorTimer] = useState(45);
+  const [reactorQuestionIdx, setReactorQuestionIdx] = useState(0);
+  const [reactorScore, setReactorScore] = useState(0);
+  const [reactorQuestions, setReactorQuestions] = useState<{ q: string; opts: string[]; ans: number }[]>(ALL_30_QUESTIONS.slice(0, 5));
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Audio utility wrapper
+  const triggerSound = (type: 'click' | 'success' | 'levelup' | 'error' | 'reactor') => {
+    if (soundsOn) {
+      playSynthSound(type);
+    }
+  };
+
+  // Level progression check
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [activeModule]);
+    const nextLevelThreshold = level * 200;
+    if (xp >= nextLevelThreshold) {
+      setLevel(prev => prev + 1);
+      triggerSound('levelup');
+      addKioskLog(`LEVEL UP! You are now level ${level + 1}!`, 'success');
+      unlockBadge('precedence');
+    }
+  }, [xp, level]);
 
-  const modules = [
-    { id: MODULE_IDS.INTRO, title: 'Dashboard & Roadmap', icon: '🚀', premium: false },
-    { id: 'glossary', title: 'Git Glossary', icon: '📖', premium: false },
-    { id: MODULE_IDS.SCOPES, title: 'Config Levels', icon: '📊', premium: false },
-    { id: 'registry-editor', title: 'Registry Kiosk Console', icon: '⚙️', premium: false },
-    { id: MODULE_IDS.ESSENTIALS, title: 'Workflow Essentials', icon: '🛠️', premium: false },
-    { id: 'team-workspace', title: 'SaaS Workspace & Seats', icon: '👥', premium: true },
-    { id: MODULE_IDS.READING, title: 'Reading Values', icon: '🔍', premium: false },
-    { id: MODULE_IDS.WRITING, title: 'Writing & Updating', icon: '✍️', premium: false },
-    { id: MODULE_IDS.REMOVING, title: 'Removing Config', icon: '🗑️', premium: false },
-    { id: MODULE_IDS.CHEATSHEET, title: 'Full Command Hub', icon: '📜', premium: false },
-    { id: MODULE_IDS.TROUBLESHOOTING, title: 'Diagnostics & Fixes', icon: '🩺', premium: true },
-  ];
+  // 🏆 AUTOMATIC LIVE ACHIEVEMENT SEALS SYSTEM
+  useEffect(() => {
+    // 1. Configuration Primer (arborist)
+    if (configs['user.name'] && configs['user.name'] !== 'Learner' && configs['user.email'] && configs['user.email'] !== 'learner@example.com') {
+      unlockBadge('arborist');
+    }
+    // 2. Staging Area (oxygenizer)
+    if (stagedFiles.length > 0 || localCommits.length > 0 || remoteCommits.length > 0) {
+      unlockBadge('oxygenizer');
+    }
+    // 3. Commit Log (carbon)
+    if (localCommits.length > 0 || remoteCommits.length > 0) {
+      unlockBadge('carbon');
+    }
+    // 4. Remote Upstream (canopy)
+    if (remoteCommits.length > 0) {
+      unlockBadge('canopy');
+    }
+    // 5. Precedence Sage (precedence)
+    if (level >= 2) {
+      unlockBadge('precedence');
+    }
+    // 6. Reactor Master (reactor)
+    if (reactorState === 'victory') {
+      unlockBadge('reactor');
+    }
+  }, [configs, stagedFiles, localCommits, remoteCommits, level, reactorState]);
 
-  const masteredCount = Object.values(masteredModules).filter(Boolean).length;
-  const progressPercentage = Math.round((masteredCount / modules.length) * 100);
-  const isCurriculumFinished = masteredCount === modules.length;
+  // 💾 SESSION STORAGE SYNCHRONIZATION LOOP
+  useEffect(() => {
+    sessionStorage.setItem('git_show_dashboard', String(showDashboard));
+    sessionStorage.setItem('git_configs', JSON.stringify(configs));
+    sessionStorage.setItem('git_xp', String(xp));
+    sessionStorage.setItem('git_level', String(level));
+    sessionStorage.setItem('git_mastered_missions', JSON.stringify(masteredMissions));
+    sessionStorage.setItem('git_earned_badges', JSON.stringify(earnedBadges));
+    sessionStorage.setItem('git_unset_config', String(hasUnsetConfig));
+    sessionStorage.setItem('git_reset_performed', String(hasResetPerformed));
+  }, [showDashboard, configs, xp, level, masteredMissions, earnedBadges, hasUnsetConfig, hasResetPerformed]);
 
-  const triggerCopy = (cmdText: string) => {
-    navigator.clipboard.writeText(cmdText);
-    setCopiedCmd(cmdText);
-    setTimeout(() => {
-      setCopiedCmd(null);
-    }, 1500);
+  // Timer loop for Reactor game
+  useEffect(() => {
+    if (reactorState === 'playing') {
+      timerRef.current = setInterval(() => {
+        setReactorTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            setReactorState('gameover');
+            triggerSound('error');
+            triggerShake();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [reactorState]);
+
+  // Auto trigger game over if temperature spikes to 100%
+  useEffect(() => {
+    if (reactorTemp >= 100 && reactorState === 'playing') {
+      setReactorState('gameover');
+      triggerSound('error');
+      triggerShake();
+    }
+  }, [reactorTemp, reactorState]);
+
+  const triggerShake = () => {
+    setShakeOn(true);
+    setTimeout(() => setShakeOn(false), 450);
+  };
+
+  const addLog = (msg: string) => {
+    setVisualLogs(prev => [msg, ...prev].slice(0, 5));
   };
 
   const addKioskLog = (msg: string, type: 'success' | 'info' | 'warn') => {
@@ -479,26 +521,214 @@ const App: React.FC = () => {
     ].slice(0, 15));
   };
 
-  // Expand categories when search query is entered
-  useEffect(() => {
-    if (searchQuery.trim() !== '') {
-      const allCategoryNames = GIT_COMMANDS_DATABASE.map(c => c.name);
-      setExpandedCategories(allCategoryNames);
-    } else {
-      setExpandedCategories([]);
+  const handleGitAdd = () => {
+    if (workingFiles.length === 0) {
+      addLog('WARNING: No modified files found in Working Directory.');
+      triggerSound('error');
+      return;
     }
-  }, [searchQuery]);
+    setAnimationState('adding');
+    addLog('Executing [git add .] -> Indexing local workspace files...');
+    triggerSound('click');
+    
+    setTimeout(() => {
+      setStagedFiles(prev => [...prev, ...workingFiles]);
+      setWorkingFiles([]);
+      setAnimationState('idle');
+      addLog('SUCCESS: Files staging complete. Changes added to Index.');
+      triggerSound('success');
+      setXp(prev => prev + 30);
+      unlockBadge('oxygenizer');
+    }, 1800);
+  };
 
-  const toggleCategory = (catName: string) => {
-    setExpandedCategories(prev =>
-      prev.includes(catName) ? prev.filter(c => c !== catName) : [...prev, catName]
-    );
+  const handleGitCommit = () => {
+    if (stagedFiles.length === 0) {
+      addLog('WARNING: Staging Area empty. Run [git add] first.');
+      triggerSound('error');
+      return;
+    }
+    setAnimationState('committing');
+    addLog('Executing [git commit -m "feat: user profile"] -> Creating new local commit...');
+    triggerSound('click');
+
+    setTimeout(() => {
+      const newHash = Math.random().toString(16).substring(2, 7).toUpperCase();
+      const newCommit: CommitItem = { hash: newHash, msg: 'feat: user profile' };
+      setLocalCommits(prev => [...prev, newCommit]);
+      setStagedFiles([]);
+      setAnimationState('idle');
+      addLog(`SUCCESS: Commit created. HASH: [${newHash}] -> Changes saved locally.`);
+      triggerSound('success');
+      setXp(prev => prev + 50);
+      unlockBadge('carbon');
+    }, 1800);
+  };
+
+  const handleGitPush = () => {
+    if (localCommits.length === 0) {
+      addLog('WARNING: No local commits available. Sync blocked.');
+      triggerSound('error');
+      return;
+    }
+    setAnimationState('pushing');
+    addLog('Executing [git push origin main] -> Transferring local commits to remote origin...');
+    triggerSound('click');
+
+    setTimeout(() => {
+      setRemoteCommits(prev => [...prev, ...localCommits]);
+      setLocalCommits([]);
+      setAnimationState('idle');
+      addLog('SUCCESS: Upstream remote synchronization complete.');
+      triggerSound('success');
+      setXp(prev => prev + 80);
+      unlockBadge('canopy');
+    }, 1800);
+  };
+
+  const handleReset = () => {
+    setWorkingFiles(['index.js', 'styles.css']);
+    setStagedFiles([]);
+    setLocalCommits([]);
+    setRemoteCommits([]);
+    setAnimationState('idle');
+    setHasResetPerformed(true);
+    triggerSound('click');
+    addLog('PIPELINE RESET // Local directory reverted to initial sandbox state.');
+  };
+
+  const handleLogout = () => {
+    // Clear all session storage values
+    sessionStorage.clear();
+    
+    // Reset all state variables to defaults
+    setConfigs(INITIAL_CONFIGS);
+    setLevel(1);
+    setXp(0);
+    setMasteredMissions([]);
+    setEarnedBadges([]);
+    setWorkingFiles(['index.js', 'styles.css']);
+    setStagedFiles([]);
+    setLocalCommits([]);
+    setRemoteCommits([]);
+    setHasResetPerformed(false);
+    setHasUnsetConfig(false);
+    setReactorState('idle');
+    setReactorTemp(50);
+    setReactorScore(0);
+    setReactorQuestionIdx(0);
+    
+    // Redirect to Landing Page
+    setShowDashboard(false);
+    
+    // Log & alert sound
+    triggerSound('error');
+    addKioskLog('SESSION TERMINATED: Purged all secure registries cache.', 'warn');
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!circleRef.current) return;
+    const rect = circleRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+    setDragStartAngle(angle);
+    setDragStartRotation(rotationAngle);
+    setIsDragging(true);
+    circleRef.current.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !circleRef.current) return;
+    const rect = circleRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+    const diff = angle - dragStartAngle;
+    const diffDegrees = diff * (180 / Math.PI);
+    setRotationAngle(dragStartRotation + diffDegrees);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (circleRef.current) {
+      circleRef.current.releasePointerCapture(e.pointerId);
+    }
+    const snapped = Math.round(rotationAngle / 40) * 40;
+    setRotationAngle(snapped);
+    triggerSound('success');
+  };
+
+  const unlockBadge = (badgeId: string) => {
+    if (!earnedBadges.includes(badgeId)) {
+      setEarnedBadges(prev => [...prev, badgeId]);
+      addKioskLog(`ACHIEVEMENT EARNED: Unlocked badge "${badgeId.toUpperCase()}"`, 'success');
+      setXp(prev => prev + 60);
+    }
+  };
+
+  const handleReactorAnswer = (optIndex: number) => {
+    const currentQ = reactorQuestions[reactorQuestionIdx];
+    if (!currentQ) return;
+    if (optIndex === currentQ.ans) {
+      triggerSound('success');
+      setReactorTemp(prev => Math.max(0, prev - 15));
+      setReactorScore(prev => prev + 1);
+      addKioskLog(`REACTOR DIAGNOSTICS: Layer ${reactorQuestionIdx + 1} stabilized.`, 'success');
+      
+      if (reactorQuestionIdx >= reactorQuestions.length - 1) {
+        setReactorState('victory');
+        setXp(prev => prev + 250);
+        unlockBadge('reactor');
+      } else {
+        setReactorQuestionIdx(prev => prev + 1);
+      }
+    } else {
+      triggerSound('error');
+      triggerShake();
+      setReactorTemp(prev => prev + 25);
+      addKioskLog(`REACTOR CRITICAL: Breach warning triggered at Layer ${reactorQuestionIdx + 1}!`, 'warn');
+    }
+  };
+
+  const startReactorGame = () => {
+    // 1. Shuffle all 30 questions randomly
+    const shuffledPool = [...ALL_30_QUESTIONS].sort(() => Math.random() - 0.5);
+    
+    // 2. Select 5 questions and shuffle their option order dynamically while keeping correctness
+    const selected = shuffledPool.slice(0, 5).map(item => {
+      const pairedOptions = item.opts.map((opt, oidx) => ({
+        text: opt,
+        isCorrect: oidx === item.ans
+      }));
+      const shuffledPairs = pairedOptions.sort(() => Math.random() - 0.5);
+      return {
+        q: item.q,
+        opts: shuffledPairs.map(p => p.text),
+        ans: shuffledPairs.findIndex(p => p.isCorrect)
+      };
+    });
+
+    setReactorQuestions(selected);
+    setReactorState('playing');
+    setReactorTemp(50);
+    setReactorTimer(45);
+    setReactorQuestionIdx(0);
+    setReactorScore(0);
+    triggerSound('click');
   };
 
   const handleUpdateConfig = (key: string, val: string) => {
     if (!key.trim()) return;
     setConfigs(prev => ({ ...prev, [key]: val }));
-    addKioskLog(`UPDATED registry variable "${key}" to "${val}"`, 'success');
+    
+    // Terminal execution simulation
+    addKioskLog(`$ git config --global ${key} "${val}"`, 'info');
+    addKioskLog(`[global] ${key} updated to "${val}"`, 'success');
+    
+    triggerSound('success');
+    unlockBadge('arborist');
   };
 
   const handleRemoveConfig = (key: string) => {
@@ -507,14 +737,18 @@ const App: React.FC = () => {
       delete copy[key];
       return copy;
     });
-    addKioskLog(`UNSET registry variable "${key}"`, 'warn');
+    setHasUnsetConfig(true);
+    
+    // Terminal execution simulation
+    addKioskLog(`$ git config --global --unset ${key}`, 'warn');
+    addKioskLog(`[global] ${key} profile credential purged`, 'info');
+    
+    triggerSound('click');
   };
 
   const handleAddSeat = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMemberEmail.trim()) return;
-    
-
 
     const initials = newMemberEmail.substring(0, 2).toUpperCase();
     const newMember: TeamMember = {
@@ -527,795 +761,673 @@ const App: React.FC = () => {
     setTeamMembers(prev => [...prev, newMember]);
     setNewMemberEmail('');
     addKioskLog(`INVITED new seat user: ${newMember.email}`, 'info');
+    triggerSound('success');
   };
 
-  // Filtering commands
-  const filteredDatabase = GIT_COMMANDS_DATABASE.map(category => {
-    const matchingCmds = category.commands.filter(cmd => 
-      cmd.cmd.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cmd.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (cmd.note && cmd.note.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    return { ...category, commands: matchingCmds };
-  }).filter(category => category.commands.length > 0);
-
-  const toggleMasteryState = () => {
-    setMasteredModules(prev => ({
-      ...prev,
-      [activeModule]: !prev[activeModule]
-    }));
-  };
-  
-  const renderModuleContent = () => {
-    switch (activeModule) {
-      case MODULE_IDS.INTRO:
-        return (
-          <section className="space-y-8 animate-fadeIn" aria-labelledby="module-title">
-            <h2 id="module-title" className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Enterprise learning path <span className="text-emerald-600 dark:text-emerald-500">&</span> Roadmap</h2>
-            <p className="text-slate-600 dark:text-emerald-100/80 leading-relaxed text-xl font-medium">
-              Git configuration acts as the structural nervous system of your version control tree. It registers your identity and establishes the system parameters for every repository you operate.
-            </p>
-            
-            {/* Live Interactive Git Pipeline visualizer */}
-            <GitArchitectureVisualizer />
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-[#010108] p-6 rounded-2xl border border-slate-200 dark:border-emerald-900/20 shadow-sm">
-                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">Legacy Schema</span>
-                <code className="block mt-4 text-sm text-emerald-700 dark:text-emerald-300 font-mono bg-emerald-50 dark:bg-black/40 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/10">git config [&lt;options&gt;]</code>
-              </div>
-              <div className="bg-white dark:bg-[#010108] p-6 rounded-2xl border border-slate-200 dark:border-emerald-900/20 shadow-sm">
-                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Modern Standard</span>
-                <code className="block mt-4 text-sm text-emerald-700 dark:text-emerald-200 font-mono bg-emerald-50 dark:bg-black/40 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/10">git config &lt;subcommand&gt;</code>
-              </div>
-            </div>
-
-            {isCurriculumFinished ? (
-              <div className="pt-6">
-                <CertificateCard studentName={configs['user.name'] || 'Orion Student'} />
-              </div>
-            ) : null}
-
-            <aside className="bg-slate-100 dark:bg-[#0c0d1e] p-8 rounded-3xl border border-slate-200 dark:border-[#1e1f48] relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">💡</div>
-              <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-[#ecfdf5] uppercase tracking-wider">Professional Summary</h3>
-              <p className="text-slate-700 dark:text-[#b7b8e1] italic text-lg leading-relaxed">
-                "Git configuration governs system and tool behaviors through prioritized files (Local, Global, System), primarily operated via the <code className="text-emerald-600 dark:text-[#9295d3] bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded font-mono font-bold">git config</code> subsystem."
-              </p>
-            </aside>
-
-
-          </section>
-        );
-
-      case 'glossary':
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Core Lexicon</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                { term: 'Git', desc: 'The distributed local engine that tracks filesystem alterations.' },
-                { term: 'GitHub', desc: 'The cloud collaboration layer and codebase hosting repository.' },
-                { term: 'Commit', desc: 'An immutable SHA-1 hashed snapshot of your project state.' },
-                { term: 'Branch', desc: 'A named pointer referencing a specific sequence of commits.' },
-                { term: 'Clone', desc: 'A complete local duplication of a remote version controlled repository.' },
-                { term: 'Remote', desc: 'The reference link to the primary repository hosted in the cloud (e.g. origin).' },
-              ].map(g => (
-                <div key={g.term} className="p-6 bg-white dark:bg-transparent border border-slate-200 dark:border-emerald-900/10 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-all cursor-default shadow-sm dark:shadow-none">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black block mb-2 text-sm uppercase tracking-widest">{g.term}</span>
-                  <p className="text-slate-500 dark:text-emerald-100/40 leading-relaxed text-xs">{g.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.SCOPES:
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Architectural Hierarchy</h2>
-            <div className="flex items-center space-x-4 mb-4">
-               <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 text-[10px] font-bold tracking-widest">PRIORITY ORDER</span>
-               <div className="h-px flex-1 bg-slate-200 dark:bg-emerald-900/20"></div>
-            </div>
-            <div className="grid gap-6">
-              {[
-                { name: '--local', desc: 'Highest priority. Overrides all options. Specific to one project repository.', file: '.git/config', color: 'text-emerald-600 dark:text-emerald-400' },
-                { name: '--global', desc: 'Middle priority. Applies user-wide. Governs your OS user profile settings.', file: '~/.gitconfig', color: 'text-emerald-600 dark:text-emerald-500' },
-                { name: '--system', desc: 'Lowest priority. Machine-wide defaults. Governs all OS user accounts.', file: '/etc/gitconfig', color: 'text-emerald-800 dark:text-emerald-700' },
-              ].map((s) => (
-                <article key={s.name} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-3xl hover:border-emerald-500/30 transition-all group shadow-sm dark:shadow-none">
-                  <div className="mb-4 sm:mb-0">
-                    <code className={`font-black text-2xl ${s.color} transition-colors`}>{s.name}</code>
-                    <p className="text-[10px] text-slate-400 dark:text-emerald-900 mt-2 font-mono uppercase tracking-[0.3em] font-bold">{s.file}</p>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-emerald-100/50 font-medium max-w-xs sm:text-right">{s.desc}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        );
-
-      case 'registry-editor':
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-              <div>
-                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Registry Kiosk Console</h2>
-                <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed text-sm mt-1">Manage your variables visually inside our secure industrial-grade console.</p>
-              </div>
-              <div className="px-4 py-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-mono text-[9px] uppercase tracking-widest rounded-xl self-start flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                GEOFENCE: operational
-              </div>
-            </header>
-            
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Presets and options */}
-              <div className="p-8 bg-white dark:bg-[#080914] border-2 border-emerald-500/15 rounded-[2rem] space-y-6 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent"></div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Core Registry Properties
-                </h3>
-                
-                <div className="space-y-4">
-                  {[
-                    { label: 'User Display Name (user.name)', key: 'user.name', type: 'text', placeholder: 'e.g. Orion Developer' },
-                    { label: 'Primary Developer Email (user.email)', key: 'user.email', type: 'email', placeholder: 'e.g. developer@orion-os.org' },
-                    { label: 'Default Branch Name (init.defaultBranch)', key: 'init.defaultBranch', type: 'text', placeholder: 'e.g. main' },
-                    { label: 'Terminal Text Editor (core.editor)', key: 'core.editor', type: 'text', placeholder: 'e.g. code --wait, vim, nano' },
-                  ].map(opt => (
-                    <div key={opt.key} className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 dark:text-emerald-500/50 uppercase tracking-wider block">{opt.label}</label>
-                      <input
-                        type={opt.type}
-                        value={configs[opt.key] || ''}
-                        onChange={(e) => handleUpdateConfig(opt.key, e.target.value)}
-                        placeholder={opt.placeholder}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 focus:outline-none focus:border-emerald-500 transition-colors"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom keys & green log console */}
-              <div className="p-8 bg-white dark:bg-[#080914] border-2 border-emerald-500/15 rounded-[2rem] space-y-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent"></div>
-                <div className="space-y-6">
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Custom Variables
-                  </h3>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="key (e.g. alias.st)"
-                      value={newRegistryKey}
-                      onChange={e => setNewRegistryKey(e.target.value)}
-                      className="flex-1 px-4 py-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 focus:outline-none focus:border-emerald-500 transition-colors"
-                    />
-                    <input
-                      type="text"
-                      placeholder="value (e.g. status)"
-                      value={newRegistryValue}
-                      onChange={e => setNewRegistryValue(e.target.value)}
-                      className="flex-1 px-4 py-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 focus:outline-none focus:border-emerald-500 transition-colors"
-                    />
-                    <button
-                      onClick={() => {
-                        if (newRegistryKey.trim() && newRegistryValue.trim()) {
-                          handleUpdateConfig(newRegistryKey.trim(), newRegistryValue.trim());
-                          setNewRegistryKey('');
-                          setNewRegistryValue('');
-                        }
-                      }}
-                      className="px-5 bg-emerald-600 hover:bg-emerald-500 text-white dark:text-emerald-950 font-black rounded-xl text-[10px] uppercase tracking-wider active:scale-95 transition-all"
-                    >
-                      Add Key
-                    </button>
-                  </div>
-                </div>
-
-                {/* Cyber Kiosk Log Box */}
-                <div className="mt-6 space-y-2 flex-1 flex flex-col">
-                  <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Kiosk Console Event Stream</span>
-                  <div className="bg-[#04040b] p-4 rounded-2xl border border-emerald-900/50 font-mono text-[10px] text-emerald-400 min-h-[8rem] flex-1 space-y-1.5">
-                    {kioskLogs.map(log => (
-                      <div key={log.id} className="flex gap-2 leading-relaxed">
-                        <span className="text-emerald-700 opacity-60">[{log.time}]</span>
-                        <span className={log.type === 'success' ? 'text-emerald-400' : log.type === 'warn' ? 'text-red-400' : 'text-emerald-600'}>
-                          {log.msg}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-
-      case 'team-workspace':
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <header className="flex justify-between items-center">
-              <div>
-                <h2 className="text-4xl font-black text-white tracking-tight">SaaS Seats & Workspaces</h2>
-                <p className="text-xs text-emerald-100/60 leading-relaxed mt-1">Manage active developer invitations, geofence authorizations, and seat quotas.</p>
-              </div>
-              <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-mono text-emerald-400 uppercase tracking-wider">
-                Workspace Quota: {teamMembers.length} seats active
-              </span>
-            </header>
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* Invite seat form */}
-              <div className="xl:col-span-1 p-8 bg-[#0c0d1e] border border-[#1e1f48] rounded-[2rem] space-y-6">
-                <h3 className="text-base font-black text-white">Invite Team Developer</h3>
-                <form onSubmit={handleAddSeat} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-emerald-500/50 uppercase tracking-wider">Email Address</label>
-                    <input 
-                      type="email"
-                      value={newMemberEmail}
-                      onChange={e => setNewMemberEmail(e.target.value)}
-                      placeholder="e.g. engineer@orion-os.org"
-                      className="w-full px-4 py-3 bg-black/40 border border-emerald-900/10 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-emerald-500/50 uppercase tracking-wider">Workspace Role</label>
-                    <select
-                      value={newMemberRole}
-                      onChange={e => setNewMemberRole(e.target.value as any)}
-                      className="w-full px-4 py-3 bg-black/40 border border-emerald-900/10 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="Developer">Developer Seat</option>
-                      <option value="Security">Security Auditor</option>
-                      <option value="Admin">Administrator</option>
-                    </select>
-                  </div>
-                  <button 
-                    type="submit"
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white dark:text-emerald-950 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
-                  >
-                    Provision Seat License
-                  </button>
-                </form>
-              </div>
-
-              {/* Seats Grid */}
-              <div className="xl:col-span-2 p-8 bg-[#0c0d1e] border border-[#1e1f48] rounded-[2rem] space-y-6 flex flex-col justify-between">
-                <h3 className="text-base font-black text-white">Active Seats Registry</h3>
-                <div className="divide-y divide-emerald-900/10 flex-1 pr-2">
-                  {teamMembers.map((member, idx) => (
-                    <div key={idx} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-xs">
-                          {member.avatar}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white font-mono">{member.email}</p>
-                          <span className="text-[9px] text-emerald-500/50 uppercase font-black">{member.role}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-mono uppercase tracking-wider ${
-                          member.status === 'Active' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
-                        }`}>
-                          {member.status}
-                        </span>
-                        {member.email !== 'godfrey@orion-os.org' && (
-                          <button 
-                            onClick={() => {
-                              setTeamMembers(prev => prev.filter(m => m.email !== member.email));
-                              addKioskLog(`REVOKED seat license for: ${member.email}`, 'warn');
-                            }}
-                            className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                          >
-                            Revoke
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.ESSENTIALS:
-        return (
-          <section className="space-y-10 animate-fadeIn">
-            <header className="space-y-4">
-              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">The Core <span className="text-emerald-600 dark:text-emerald-500">Git Workflow</span></h2>
-              <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed max-w-3xl">
-                Mastering Git starts with understanding the standard cyclical sequence of checking, preparing, and publishing code. Remember: <strong>S → A → C → P</strong>.
-              </p>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-              {[
-                { step: '1. Status Checking', icon: '🔍', cmd: 'git status', desc: 'Inspects your directory tree for newly staged, altered, or completely untracked files.', color: 'emerald' },
-                { step: '2. Staging Phase', icon: '📥', cmd: 'git add .', desc: 'Compiles and moves all chosen changes into the active logical Staging Area.', color: 'emerald' },
-                { step: '3. Snapshot Hashing', icon: '💾', cmd: 'git commit -m "commit message"', desc: 'Generates a permanent, cryptographically indexable, locally signed snapshot of changes.', color: 'emerald' },
-                { step: '4. Remote Sync', icon: '☁️', cmd: 'git push', desc: 'Safely transmits your newly recorded local commits up to the remote master server (GitHub).', color: 'emerald' },
-              ].map((item, i) => (
-                <div key={i} className="p-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-[2.5rem] relative overflow-hidden group hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-none">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">{item.icon}</span>
-                    <span className="text-[10px] font-black text-slate-300 dark:text-emerald-800 uppercase tracking-widest">Phase 0{i+1}</span>
-                  </div>
-                  <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2">{item.step}</h4>
-                  <p className="text-xs text-slate-500 dark:text-emerald-100/40 leading-relaxed mb-6 h-10">{item.desc}</p>
-                  
-                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-emerald-950/20 border border-slate-100 dark:border-emerald-900/20 rounded-xl">
-                    <code className="text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold">
-                      {item.cmd}
-                    </code>
-                    <button 
-                      onClick={() => triggerCopy(item.cmd)}
-                      className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"
-                      title="Copy command"
-                    >
-                      {copiedCmd === item.cmd ? (
-                        <svg className="w-4 h-4 text-emerald-500 animate-scaleIn" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-8 bg-emerald-600 dark:bg-emerald-500 text-white dark:text-emerald-950 rounded-[3rem] relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-10 text-9xl font-black rotate-12">SACP</div>
-               <h3 className="text-2xl font-black mb-4">Memory Pulse: S.A.C.P</h3>
-               <p className="text-sm opacity-90 leading-relaxed max-w-xl">
-                 If you ever feel lost in version control, follow the sequence: <strong>Status</strong> to inspect, <strong>Add</strong> to stage, <strong>Commit</strong> to sign, <strong>Push</strong> to synchronize.
-               </p>
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.READING:
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">🔍 Reading Config Values</h2>
-            <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed text-lg font-medium">Use these commands to debug your configuration scopes and review active parameters.</p>
-            
-            <div className="space-y-4">
-              {[
-                { cmd: 'git config --list', desc: 'Displays every compiled key-value pair from all active scopes (System, Global, and Local).' },
-                { cmd: 'git config user.name', desc: 'Reads the specific active string defined for the chosen key.' },
-                { cmd: 'git config --show-origin --list', desc: 'Diagnostic: shows the exact file path location where each specific config variable resides.' },
-              ].map((item, idx) => (
-                <div key={idx} className="p-6 bg-white dark:bg-black/40 border border-slate-200 dark:border-emerald-900/10 rounded-2xl flex flex-col md:flex-row md:items-center justify-between group hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-none gap-4">
-                  <div className="flex items-center justify-between md:justify-start gap-4 flex-1">
-                    <code className="text-emerald-700 dark:text-emerald-400 font-mono text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 font-bold">{item.cmd}</code>
-                    <button 
-                      onClick={() => triggerCopy(item.cmd)}
-                      className="p-1 text-slate-400 hover:text-emerald-500 transition-colors"
-                      title="Copy command"
-                    >
-                      {copiedCmd === item.cmd ? (
-                        <svg className="w-4 h-4 text-emerald-500 animate-scaleIn" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                      )}
-                    </button>
-                  </div>
-                  <span className="text-slate-400 dark:text-emerald-100/30 text-xs italic max-w-sm md:text-right">{item.desc}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.WRITING:
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">✍️ Writing & Updating</h2>
-            <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed text-lg">Setting active identity keys and personalizing your developer preferences globally or locally.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-8 bg-slate-100 dark:bg-emerald-900/10 border border-slate-200 dark:border-emerald-900/20 rounded-3xl space-y-4 shadow-sm dark:shadow-none">
-                <h4 className="text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase tracking-widest">Identity Setup</h4>
-                <div className="space-y-4 font-mono text-xs">
-                  <div className="space-y-2">
-                    <p className="text-slate-400 dark:text-emerald-100/40"># Global scope setting (OS user wide)</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-black/40 rounded border border-slate-200 dark:border-transparent">
-                      <code className="text-emerald-800 dark:text-emerald-200 font-bold block truncate">git config --global user.name "Your Name"</code>
-                      <button onClick={() => triggerCopy('git config --global user.name "Your Name"')} className="text-slate-400 hover:text-emerald-500 ml-2">
-                        {copiedCmd === 'git config --global user.name "Your Name"' ? '✓' : '⎘'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-slate-400 dark:text-emerald-100/40"># Local scope setting (Current folder only)</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-black/40 rounded border border-slate-200 dark:border-transparent">
-                      <code className="text-emerald-800 dark:text-emerald-200 font-bold block truncate">git config --local user.email "work@co.com"</code>
-                      <button onClick={() => triggerCopy('git config --local user.email "work@co.com"')} className="text-slate-400 hover:text-emerald-500 ml-2">
-                        {copiedCmd === 'git config --local user.email "work@co.com"' ? '✓' : '⎘'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8 bg-slate-100 dark:bg-emerald-900/10 border border-slate-200 dark:border-emerald-900/20 rounded-3xl space-y-4 shadow-sm dark:shadow-none">
-                <h4 className="text-emerald-700 dark:text-emerald-400 font-black text-[10px] uppercase tracking-widest">Core Preferences</h4>
-                <div className="space-y-4 font-mono text-xs">
-                  <div className="space-y-2">
-                    <p className="text-slate-400 dark:text-emerald-100/40"># VS Code as default standard editor</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-black/40 rounded border border-slate-200 dark:border-transparent">
-                      <code className="text-emerald-800 dark:text-emerald-200 font-bold block truncate">git config --global core.editor "code --wait"</code>
-                      <button onClick={() => triggerCopy('git config --global core.editor "code --wait"')} className="text-slate-400 hover:text-emerald-500 ml-2">
-                        {copiedCmd === 'git config --global core.editor "code --wait"' ? '✓' : '⎘'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-slate-400 dark:text-emerald-100/40"># Enforcing default primary branch name</p>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-black/40 rounded border border-slate-200 dark:border-transparent">
-                      <code className="text-emerald-800 dark:text-emerald-200 font-bold block truncate">git config --global init.defaultBranch main</code>
-                      <button onClick={() => triggerCopy('git config --global init.defaultBranch main')} className="text-slate-400 hover:text-emerald-500 ml-2">
-                        {copiedCmd === 'git config --global init.defaultBranch main' ? '✓' : '⎘'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.REMOVING:
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">🗑️ Removing Config Keys</h2>
-            <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed text-lg">Correcting registry errors or unsetting outdated variables from your configurations.</p>
-            <div className="bg-red-50 dark:bg-red-950/10 border border-red-100 dark:border-red-900/20 p-8 rounded-3xl space-y-6">
-              <div className="flex items-center space-x-4">
-                <span className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-500 text-lg">⚠️</span>
-                <div>
-                  <h4 className="text-red-700 dark:text-red-400 font-black text-[10px] uppercase tracking-widest">Scope Hazard Note</h4>
-                  <p className="text-red-800/60 dark:text-red-100/40 text-xs">Always ensure you supply the exact scope option (--local/--global/--system) to target the correct setting file.</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="p-4 bg-white dark:bg-black/40 rounded-xl border border-red-100 dark:border-red-900/10 flex justify-between items-center shadow-sm">
-                  <div className="flex flex-col space-y-1">
-                    <code className="text-red-600 dark:text-red-400 font-mono text-sm font-bold">git config --global --unset user.name</code>
-                    <span className="text-red-800/40 dark:text-red-100/30 text-[9px] uppercase tracking-widest font-black">Removes username parameter from ~/.gitconfig</span>
-                  </div>
-                  <button onClick={() => triggerCopy('git config --global --unset user.name')} className="p-2 bg-red-500/10 rounded-lg hover:bg-red-500/20 text-red-500 transition-colors">
-                    {copiedCmd === 'git config --global --unset user.name' ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div className="p-4 bg-white dark:bg-black/40 rounded-xl border border-red-100 dark:border-red-900/10 flex justify-between items-center shadow-sm">
-                  <div className="flex flex-col space-y-1">
-                    <code className="text-red-600 dark:text-red-400 font-mono text-sm font-bold">git config --local --unset-all core.ignored</code>
-                    <span className="text-red-800/40 dark:text-red-100/30 text-[9px] uppercase tracking-widest font-black">Removes multi-value variables in local scope</span>
-                  </div>
-                  <button onClick={() => triggerCopy('git config --local --unset-all core.ignored')} className="p-2 bg-red-500/10 rounded-lg hover:bg-red-500/20 text-red-500 transition-colors">
-                    {copiedCmd === 'git config --local --unset-all core.ignored' ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.TROUBLESHOOTING:
-
-
-        return (
-          <section className="space-y-8 animate-fadeIn">
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">🩺 Diagnostics & Troubleshooting</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-8 bg-white dark:bg-transparent border border-slate-200 dark:border-emerald-900/20 rounded-3xl space-y-4 hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-none flex flex-col justify-between">
-                <div>
-                  <h4 className="text-slate-900 dark:text-white font-bold text-sm">Issue: Commit Author logs under wrong profile</h4>
-                  <p className="text-slate-500 dark:text-emerald-100/40 text-xs leading-relaxed mt-2">Typically triggered by a forgotten local config override inside your current repository, which supersedes your global parameters.</p>
-                </div>
-                <div className="pt-4 border-t border-slate-100 dark:border-emerald-900/10 mt-6">
-                  <span className="text-emerald-600 dark:text-emerald-500 font-black text-[10px] uppercase tracking-widest block mb-2">Find active file source:</span>
-                  <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-emerald-950/20 border border-slate-100 dark:border-emerald-900/20 rounded-xl">
-                    <code className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono font-bold">git config --show-origin user.name</code>
-                    <button onClick={() => triggerCopy('git config --show-origin user.name')} className="text-emerald-600 hover:text-emerald-400 font-mono text-[10px]">
-                      {copiedCmd === 'git config --show-origin user.name' ? '✓' : 'copy'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8 bg-white dark:bg-transparent border border-slate-200 dark:border-emerald-900/20 rounded-3xl space-y-4 hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-none flex flex-col justify-between">
-                <div>
-                  <h4 className="text-slate-900 dark:text-white font-bold text-sm">Issue: Configuration edits not applying as expected</h4>
-                  <p className="text-slate-500 dark:text-emerald-100/40 text-xs leading-relaxed mt-2">Precedence conflicts. The local file (highest precedence) ALWAYS overrides user global profiles, even if global was set more recently.</p>
-                </div>
-                <div className="pt-4 border-t border-slate-100 dark:border-emerald-900/10 mt-6 font-mono text-[10px] text-slate-400 dark:text-emerald-800">
-                  <span className="text-emerald-600 dark:text-emerald-500 font-black text-[10px] uppercase tracking-widest block mb-2">Diagnostic Action:</span>
-                  <p className="leading-relaxed">Inspect your repository's <code className="text-emerald-600 bg-emerald-100/30 px-1 py-0.5 rounded">.git/config</code> file directly to confirm overrides have not been established locally.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-
-      case MODULE_IDS.CHEATSHEET:
-        return (
-          <section className="space-y-10 animate-fadeIn h-auto">
-            <header className="space-y-6">
-              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Git Master Command Registry</h2>
-              <p className="text-slate-600 dark:text-emerald-100/60 leading-relaxed text-sm">
-                Fuzzy search across all 17 categories of standard Git commands. Review detailed scopes, notes, and visual branch diagrams.
-              </p>
-
-              {/* Search Engine Hub */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                <div className="relative flex-1 w-full">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-emerald-700">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search commands, flags, keywords (e.g. 'rebase', 'stash', '--cached')..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-4 bg-white dark:bg-black/40 border border-slate-200 dark:border-emerald-900/20 rounded-2xl text-xs font-mono text-emerald-800 dark:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
-                  />
-                  {searchQuery && (
-                    <button 
-                      onClick={() => setSearchQuery('')}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-500 text-xs uppercase tracking-wider font-bold"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button 
-                    onClick={() => setExpandedCategories(GIT_COMMANDS_DATABASE.map(c => c.name))}
-                    className="flex-1 sm:flex-none px-4 py-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                  >
-                    Expand All
-                  </button>
-                  <button 
-                    onClick={() => setExpandedCategories([])}
-                    className="flex-1 sm:flex-none px-4 py-4 bg-slate-100 dark:bg-black/20 text-slate-400 hover:text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                  >
-                    Collapse All
-                  </button>
-                </div>
-              </div>
-            </header>
-
-            {/* Accordion Database render */}
-            <div className="space-y-6 pb-20">
-              {filteredDatabase.map((category, catIdx) => {
-                const isExpanded = expandedCategories.includes(category.name);
-
-
-                return (
-                  <article 
-                    key={catIdx} 
-                    className="bg-white dark:bg-black/20 border border-slate-200 dark:border-emerald-900/10 rounded-3xl overflow-hidden shadow-sm dark:shadow-none transition-all duration-300 relative"
-                  >
-                    {/* Category Header */}
-                    <button 
-                      onClick={() => toggleCategory(category.name)}
-                      className="w-full flex items-center justify-between px-8 py-6 hover:bg-emerald-50/10 transition-colors text-left"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <span className="text-2xl">{category.icon}</span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">{category.name}</h3>
-
-                          </div>
-                          <p className="text-[10px] text-slate-400 dark:text-emerald-900/60 uppercase tracking-widest font-black mt-1">
-                            {category.commands.length} {category.commands.length === 1 ? 'Command' : 'Commands'} Available
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`text-slate-400 dark:text-emerald-700 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
-                      </span>
-                    </button>
-
-                    {/* Accordion Body */}
-                    {isExpanded && (
-                      <div className="relative">
-                        <div className="px-8 pb-8 pt-2 border-t border-slate-100 dark:border-emerald-900/5 divide-y divide-slate-100 dark:divide-emerald-900/5">
-                            {category.commands.map((cmdItem, cmdIdx) => (
-                              <div key={cmdIdx} className="py-6 first:pt-4 last:pb-0 space-y-4 group">
-                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                  <div className="space-y-1">
-                                    <h4 className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{cmdItem.desc}</h4>
-                                    {cmdItem.note && (
-                                      <p className="text-xs text-slate-500 dark:text-emerald-100/50 leading-relaxed max-w-3xl mt-1">{cmdItem.note}</p>
-                                    )}
-                                  </div>
-                                  
-                                  <button 
-                                    onClick={() => triggerCopy(cmdItem.cmd)}
-                                    className="self-start px-3 py-2 bg-slate-50 dark:bg-emerald-950/20 hover:bg-emerald-100/50 dark:hover:bg-emerald-950/60 text-slate-500 dark:text-emerald-400 border border-slate-200 dark:border-emerald-900/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
-                                  >
-                                    {copiedCmd === cmdItem.cmd ? (
-                                      <>
-                                        <svg className="w-3.5 h-3.5 text-emerald-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                                        <span>Copied</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                                        <span>Copy</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-
-                                {/* Glow Code Block */}
-                                <div className="relative">
-                                  <pre className="p-4 bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-emerald-900/10 rounded-2xl overflow-x-auto custom-scrollbar">
-                                    <code className="text-xs font-mono text-emerald-800 dark:text-emerald-300 font-bold block whitespace-pre-wrap">{cmdItem.cmd}</code>
-                                  </pre>
-                                </div>
-
-                                {/* High-Fidelity Monospaced Branch Diagrams */}
-                                {cmdItem.diagramBefore && cmdItem.diagramAfter && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-slate-100/50 dark:bg-black/20 p-5 rounded-2xl border border-slate-200/50 dark:border-emerald-900/5">
-                                    <div className="space-y-2">
-                                      <span className="text-[9px] font-black text-slate-400 dark:text-emerald-950/60 uppercase tracking-widest">Git Tree: BEFORE Operation</span>
-                                      <pre className="p-3 bg-white dark:bg-black/60 rounded-xl border border-slate-200 dark:border-emerald-950/40 text-[10px] font-mono text-slate-600 dark:text-emerald-500 overflow-x-auto">
-                                        <code>{cmdItem.diagramBefore}</code>
-                                      </pre>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <span className="text-[9px] font-black text-emerald-500/70 dark:text-emerald-700 uppercase tracking-widest">Git Tree: AFTER Operation</span>
-                                      <pre className="p-3 bg-emerald-50/50 dark:bg-emerald-950/10 rounded-xl border border-emerald-100 dark:border-emerald-950 text-[10px] font-mono text-emerald-700 dark:text-emerald-400 overflow-x-auto">
-                                        <code>{cmdItem.diagramAfter}</code>
-                                      </pre>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-
-              {filteredDatabase.length === 0 && (
-                <div className="text-center py-16 bg-slate-100 dark:bg-black/20 border border-dashed border-slate-200 dark:border-emerald-900/10 rounded-3xl">
-                  <span className="text-4xl block mb-4">🔍</span>
-                  <h4 className="text-sm font-bold text-slate-700 dark:text-emerald-500">No matching commands located</h4>
-                  <p className="text-xs text-slate-400 mt-2">Adjust your query filters to trace another Git command.</p>
-                </div>
-              )}
-            </div>
-          </section>
-        );
-
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-             <div className="text-8xl mb-8 opacity-10 animate-pulse text-emerald-900">⚙️</div>
-             <p className="text-emerald-800 dark:text-emerald-800 uppercase tracking-[0.5em] text-[10px] font-black">Initialization Sequence Active...</p>
-             <button 
-                onClick={() => setActiveModule(MODULE_IDS.INTRO)}
-                className="mt-8 px-6 py-3 bg-emerald-600/10 text-emerald-600 rounded-xl text-xs font-bold hover:bg-emerald-600/20 transition-all"
-             >
-               Return to Introduction
-             </button>
-          </div>
-        );
+  // Quest Campaigns database
+  const campaigns: CampaignItem[] = [
+    {
+      id: 'm1',
+      title: 'Mission 01 // Configuration Prioritization',
+      desc: 'Master the Local, Global, and System priorities of Git repository configurations.',
+      steps: [
+        { text: 'Set global username parameter globally', check: !!(configs['user.name'] && configs['user.name'] !== 'Learner'), type: 'config' },
+        { text: 'Configure work email override locally', check: !!(configs['user.email'] && configs['user.email'] !== 'learner@example.com'), type: 'config' },
+        { text: 'Verify scope priority overrides active', check: !!(configs['user.name'] && configs['user.email']) }
+      ],
+      xp: 150,
+      badge: 'arborist',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm2',
+      title: 'Mission 02 // Local File Staging',
+      desc: 'Track local workspace file alterations and prepare changes in the Staging Area.',
+      steps: [
+        { text: 'Stage all modified files using [git add]', check: stagedFiles.length > 0 || localCommits.length > 0 || remoteCommits.length > 0, action: 'add' },
+        { text: 'Verify staging index has active staged files', check: stagedFiles.length > 0 || localCommits.length > 0 }
+      ],
+      xp: 150,
+      badge: 'oxygenizer',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm3',
+      title: 'Mission 03 // Commit Logs',
+      desc: 'Register staging indexes as permanent, immutable commits on local branches.',
+      steps: [
+        { text: 'Stage modified files', check: stagedFiles.length > 0 || localCommits.length > 0 || remoteCommits.length > 0, action: 'add' },
+        { text: 'Run [git commit] to seal a local commit node', check: localCommits.length > 0 || remoteCommits.length > 0, action: 'commit' }
+      ],
+      xp: 150,
+      badge: 'carbon',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm4',
+      title: 'Mission 04 // Core Editor Setup',
+      desc: 'Configure your primary default terminal editor parameter using global registry overrides.',
+      steps: [
+        { text: 'Set core.editor registry key to vim, nano, or code', check: !!configs['core.editor'] && configs['core.editor'] !== 'vim', type: 'config' }
+      ],
+      xp: 150,
+      badge: 'arborist',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm5',
+      title: 'Mission 05 // Default Branch Setup',
+      desc: 'Configure default initial branch name parameters for new repositories globally.',
+      steps: [
+        { text: 'Set init.defaultBranch configuration parameter globally', check: !!configs['init.defaultBranch'], type: 'config' }
+      ],
+      xp: 150,
+      badge: 'arborist',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm6',
+      title: 'Mission 06 // Status Diagnostics',
+      desc: 'Audit repository status and identify active working directory file modifications.',
+      steps: [
+        { text: 'Verify local workspace directory holds staged or modified changes', check: workingFiles.length > 0 || stagedFiles.length > 0 }
+      ],
+      xp: 150,
+      badge: 'oxygenizer',
+      difficulty: 'basic'
+    },
+    {
+      id: 'm7',
+      title: 'Mission 07 // Remote Upstream Synchronization',
+      desc: 'Synchronize active branch commit history with upstream remote servers.',
+      steps: [
+        { text: 'Generate local commit snapshots', check: localCommits.length > 0 || remoteCommits.length > 0, action: 'commit' },
+        { text: 'Push local commits to remote upstream repository', check: remoteCommits.length > 0, action: 'push' }
+      ],
+      xp: 200,
+      badge: 'canopy',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm8',
+      title: 'Mission 08 // Configuration Unsetting',
+      desc: 'Revoke and delete active configuration parameters to clean up workspace scopes.',
+      steps: [
+        { text: 'Unset or remove a configuration parameter key in variables editor', check: hasUnsetConfig, action: 'unset' }
+      ],
+      xp: 200,
+      badge: 'precedence',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm9',
+      title: 'Mission 09 // Conflict Stabilization Layer 01',
+      desc: 'Resolve basic precedence override scenarios inside the stabilization arena.',
+      steps: [
+        { text: 'Stabilize Conflict Reactor by correctly resolving diagnostic layers', check: reactorState === 'victory' || reactorState === 'playing', action: 'reactor' }
+      ],
+      xp: 200,
+      badge: 'reactor',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm10',
+      title: 'Mission 10 // Exclusion Ignore Pattern',
+      desc: 'Define a user-wide pattern exclusion ignore list configuration globally.',
+      steps: [
+        { text: 'Configure global excludesfile path under standard configurations', check: !!configs['core.excludesfile'], type: 'config' }
+      ],
+      xp: 200,
+      badge: 'arborist',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm11',
+      title: 'Mission 11 // File Permissions Auditing',
+      desc: 'Configure index permission checks to ignore local executable mode changes.',
+      steps: [
+        { text: 'Disable core.fileMode parameter checks in local config scope', check: configs['core.fileMode'] === 'false', type: 'config' }
+      ],
+      xp: 200,
+      badge: 'oxygenizer',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm12',
+      title: 'Mission 12 // Workspace Reset Protocol',
+      desc: 'Trigger directory pipeline restores to revert working files back to standard sandbox index templates.',
+      steps: [
+        { text: 'Ensure directory is fully recovered with basic staging index', check: workingFiles.includes('index.js') && stagedFiles.length === 0 }
+      ],
+      xp: 200,
+      badge: 'precedence',
+      difficulty: 'intermediate'
+    },
+    {
+      id: 'm13',
+      title: 'Mission 13 // Hard Branch Reset Recovery',
+      desc: 'Restore staging index and revert all branch commits using sandbox reset pipelines.',
+      steps: [
+        { text: 'Perform a hard reset to cleanly revert working directory and commits', check: hasResetPerformed && workingFiles.length === 2 && stagedFiles.length === 0 && localCommits.length === 0, action: 'reset' }
+      ],
+      xp: 300,
+      badge: 'precedence',
+      difficulty: 'advanced'
+    },
+    {
+      id: 'm14',
+      title: 'Mission 14 // Precedence Override Bypass',
+      desc: 'Force override global configuration priorities with custom local scope overrides.',
+      steps: [
+        { text: 'Verify both standard config profile variables are active', check: !!(configs['user.name'] && configs['user.name'] !== 'Learner' && configs['user.email'] && configs['user.email'] !== 'learner@example.com'), type: 'config' },
+        { text: 'Complete a core Conflict Reactor stabilization audit victory', check: reactorState === 'victory' }
+      ],
+      xp: 300,
+      badge: 'precedence',
+      difficulty: 'advanced'
+    },
+    {
+      id: 'm15',
+      title: 'Mission 15 // Rebase Integration Scenario',
+      desc: 'Correctly resolve rebase integration and linear commit history merge scenarios.',
+      steps: [
+        { text: 'Stabilize at least 3 diagnostic layers inside the Conflict Reactor', check: reactorScore >= 3, action: 'reactor' }
+      ],
+      xp: 300,
+      badge: 'reactor',
+      difficulty: 'advanced'
+    },
+    {
+      id: 'm16',
+      title: 'Mission 16 // System Scope Authorization',
+      desc: 'Manage wide administrative permissions using system scope overrides.',
+      steps: [
+        { text: 'Register or unset multiple config parameter settings in variables registry', check: hasUnsetConfig || Object.keys(configs).length > 4 }
+      ],
+      xp: 300,
+      badge: 'precedence',
+      difficulty: 'advanced'
+    },
+    {
+      id: 'm17',
+      title: 'Mission 17 // Ultimate Synchronization Fusion',
+      desc: 'Demonstrate total mastery of remote branch synchronizations, configuration resets, and reactor stabilization loops.',
+      steps: [
+        { text: 'Master remote branch history sync logs', check: remoteCommits.length > 0 },
+        { text: 'Achieve stable active reactor containment status', check: reactorState === 'victory' || reactorState === 'playing' },
+        { text: 'Unset active parameters to audit config overrides', check: hasUnsetConfig }
+      ],
+      xp: 500,
+      badge: 'reactor',
+      difficulty: 'advanced'
     }
-  };
+  ];
+
+  const badgeLibrary: BadgeItem[] = [
+    { id: 'arborist', label: 'Configuration Primer', icon: '🎖️', desc: 'Configure custom precedence configurations.', unlock: 'M1 complete or variables set.' },
+    { id: 'oxygenizer', label: 'Staging Area', icon: '🍃', desc: 'Stage modified changes into staging area.', unlock: 'Run [git add] successfully.' },
+    { id: 'carbon', label: 'Commit Log', icon: '🪵', desc: 'Create local commits to save repository state.', unlock: 'Run [git commit] successfully.' },
+    { id: 'canopy', label: 'Remote Upstream', icon: '☀️', desc: 'Sync local branches to the upstream server.', unlock: 'Run [git push] successfully.' },
+    { id: 'precedence', label: 'Precedence Sage', icon: '🧙', desc: 'Achieve level progression and config override skills.', unlock: 'Automatically unlocked at Level 2.' },
+    { id: 'reactor', label: 'Reactor Master', icon: '🛡️', desc: 'Resolve configuration overrides and conflicts.', unlock: 'Complete reactor game victory.' }
+  ];
+
+  // Active status scores
+  const soilHealth = configs['user.name'] && configs['user.email'] ? 95 : 40;
+  const airPurity = workingFiles.length === 0 ? 100 : 65;
+
+  const currentLevelProgress = xp % (level * 200);
+  const levelUpThreshold = level * 200;
+  const progressPercent = Math.min(100, Math.round((currentLevelProgress / levelUpThreshold) * 100));
+
+  const masteredMissionsCount = campaigns.filter(camp => {
+    return camp.steps.every(s => s.check === undefined || s.check === true);
+  }).length;
+
+  const COMPASS_ITEMS = [
+    { id: MODULE_IDS.INTRO, title: 'Missions Portal', icon: '🌿', desc: 'Simulate staging, overrides, and linear commits history.' },
+    { id: 'reactor', title: 'Conflict Reactor', icon: '🕹️', desc: 'Resolve priority conflicts and Git command precedence merges.' },
+    { id: 'badges', title: 'Achievements Shelf', icon: '🎖️', desc: 'Review earned milestones and dynamic credentials.' },
+    { id: 'glossary', title: 'Git Glossary', icon: '📖', desc: 'Master essential Git terms and definition indexes.' },
+    { id: MODULE_IDS.SCOPES, title: 'Priority Scopes', icon: '📊', desc: 'Prioritize local, global, and system configuration directories.' },
+    { id: 'registry-editor', title: 'Variables Registry', icon: '⚙️', desc: 'Manage override scopes and reset profile credentials.' },
+    { id: 'team-workspace', title: 'Team Workspace', icon: '👥', desc: 'Pre-populate team roles and secure workspace seals.' },
+    { id: MODULE_IDS.CHEATSHEET, title: 'Commands Reference', icon: '📜', desc: 'Review standard command guides for fast reference.' },
+    { id: MODULE_IDS.TROUBLESHOOTING, title: 'System Diagnostics', icon: '🩺', desc: 'Troubleshoot identity logs and precedence conflicts.' }
+  ];
+
+  const normalizedRotation = ((rotationAngle % 360) + 360) % 360;
+  const selectedIdx = (9 - Math.round(normalizedRotation / 40)) % 9;
+  const currentSelected = COMPASS_ITEMS[selectedIdx];
 
   if (!showDashboard) {
-    return <LandingPage onEnter={() => setShowDashboard(true)} />;
+    return <LandingPage onEnter={() => setShowDashboard(true)} triggerSound={triggerSound} />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0b19] text-[#edf8f3] overflow-x-hidden transition-colors duration-500">
-      {/* SaaS Top Navigation Header - Widescreen format */}
-      <header className="p-6 border-b border-[#1e1f48] flex items-center justify-between bg-[#0a0b19]/90 backdrop-blur-lg sticky top-0 z-40 transition-colors">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-black text-white tracking-tighter flex items-center group cursor-default">
-            <span 
-              onClick={() => setShowDashboard(false)}
-              className="bg-emerald-500 w-8 h-8 flex items-center justify-center rounded-lg mr-3 text-emerald-950 hover:scale-110 transition-transform cursor-pointer font-mono font-bold"
-            >
+    <div className={`min-h-screen flex flex-col bg-[var(--color-bg-primary)] text-[#ecfdf5] transition-colors duration-500 overflow-x-hidden ${shakeOn ? 'shake-active' : ''}`}>
+      
+      {/* 🌿 TOP METRICS HUD */}
+      <header className="p-4 sm:p-6 border-b border-emerald-950/60 flex flex-col md:flex-row items-center justify-between bg-[var(--color-bg-primary)]/90 backdrop-blur-lg sticky top-0 z-40 gap-4">
+        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+          <h1 className="text-base font-black text-white tracking-tighter flex items-center cursor-pointer select-none" onClick={() => { triggerSound('click'); setShowDashboard(false); }}>
+            <span className="bg-emerald-500 w-8 h-8 flex items-center justify-center rounded-lg mr-3 text-emerald-950 font-mono font-bold animate-pulse">
               G
             </span>
-            <span className="group-hover:text-emerald-400 transition-colors font-mono tracking-wider">GIT LEARNING HUB</span>
+            <span className="font-mono tracking-wider text-sm">GIT ACADEMY CONTROLLER</span>
           </h1>
-
-          {/* SaaS Workspace Dropdown Selector */}
-          <div className="relative">
-            <button 
-              onClick={() => setWorkspaceOpen(!workspaceOpen)}
-              className="flex items-center gap-3 px-4 py-2 bg-emerald-950/30 border border-[#1e1f48] rounded-xl hover:border-emerald-500/30 text-emerald-400 font-mono text-xs uppercase tracking-wider font-bold transition-all"
-            >
-              💼 {activeWorkspace}
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            {workspaceOpen && (
-              <div className="absolute left-0 mt-2 w-56 bg-[#0c0d1e] border border-[#1e1f48] rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-[#1e1f48]/40">
-                {['Personal Workspace', 'Orion Eng Team', 'Security Audit Space'].map(ws => (
-                  <button 
-                    key={ws}
-                    onClick={() => {
-                      setActiveWorkspace(ws);
-                      setWorkspaceOpen(false);
-                      addKioskLog(`SWITCHED workspace context to: ${ws}`, 'info');
-                    }}
-                    className="w-full text-left px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-emerald-100/60 hover:bg-[#101129] hover:text-emerald-400 transition-colors"
-                  >
-                    {ws}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[9px] uppercase tracking-wider font-black rounded-xl">
-            PLATINUM WORKSPACE ACTIVE
+
+        {/* Global XP & Rank Progress Bar HUD */}
+        <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto flex-1 max-w-xl justify-end">
+          <div className="flex items-center gap-3 w-full sm:max-w-xs">
+            <div className="text-right whitespace-nowrap">
+              <span className="text-[10px] font-black text-emerald-400 block uppercase font-mono leading-none">
+                Lvl {level} {level === 1 ? 'Beginner' : level === 2 ? 'Intermediate' : level === 3 ? 'Advanced' : level === 4 ? 'Professional' : 'Master'}
+              </span>
+              <span className="text-[8px] font-mono text-emerald-600 tracking-wider uppercase">{xp} / {levelUpThreshold} XP</span>
+            </div>
+            {/* ProgressBar */}
+            <div className="w-full h-2.5 bg-slate-900/80 rounded-full border border-emerald-950/60 overflow-hidden progress-glow-bar">
+              <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+            </div>
           </div>
-          
+
+          {/* Active Repository Diagnostics Metrics */}
+          <div className="flex items-center gap-4 text-center font-mono">
+            <div>
+              <span className="text-[7px] text-emerald-500/50 uppercase block font-bold">Profile Settings</span>
+              <span className="text-xs font-black text-emerald-400">{soilHealth}%</span>
+            </div>
+            <div className="h-6 w-px bg-emerald-950/60"></div>
+            <div>
+              <span className="text-[7px] text-emerald-500/50 uppercase block font-bold">Pipeline Status</span>
+              <span className="text-xs font-black text-emerald-400">{airPurity}%</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Horizontal Stepper - Replaces traditional Sidebar with mobile dropdown */}
-      <nav className="border-b border-[#1e1f48] bg-[#0a0b19]/80 backdrop-blur-md sticky top-[73px] z-30 py-4 px-6 sm:px-12">
-        {/* Mobile Stepper Radial Compass selector */}
-        <div className="sm:hidden flex flex-col items-center py-6 relative">
-          <button
-            onClick={() => setMobileStepperOpen(!mobileStepperOpen)}
-            className={`relative z-50 w-12 h-12 rounded-full border flex items-center justify-center text-base shadow-xl transition-all bg-[#0a0b19] ${
-              mobileStepperOpen ? 'border-emerald-400 bg-emerald-950/30 rotate-180 scale-110 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-[#1e1f48] bg-[#0c0d1e] text-emerald-400 hover:border-emerald-500/30'
-            }`}
-            title="Toggle Git Navigation Dial"
-          >
-            🧭
-          </button>
-          
-          <span className="text-[8px] font-mono text-emerald-500/70 uppercase tracking-widest mt-2.5 z-50">
-            Active: {modules.find(m => m.id === activeModule)?.title}
-          </span>
+      {/* 🧭 Horizontal Stepper Navigator */}
+      <nav className="border-b border-emerald-950/40 bg-[var(--color-bg-primary)]/80 backdrop-blur-md sticky top-[73px] z-30 py-3.5 px-6">
+        <div className="hidden sm:flex flex-wrap items-center justify-center gap-2">
+          {[
+            { id: MODULE_IDS.INTRO, title: 'Learning Missions', icon: '🌿' },
+            { id: 'reactor', title: 'Conflict Reactor', icon: '🕹️' },
+            { id: 'badges', title: 'Achievements', icon: '🎖️' },
+            { id: 'glossary', title: 'Glossary', icon: '📖' },
+            { id: MODULE_IDS.SCOPES, title: 'Priority Scopes', icon: '📊' },
+            { id: 'registry-editor', title: 'Variables Registry', icon: '⚙️' },
+            { id: 'team-workspace', title: 'Team Workspace', icon: '👥' },
+            { id: MODULE_IDS.CHEATSHEET, title: 'Command Cheatsheet', icon: '📜' },
+            { id: MODULE_IDS.TROUBLESHOOTING, title: 'Diagnostics Panel', icon: '🩺' }
+          ].map((m) => {
+            const isActive = activeModule === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => { triggerSound('click'); setActiveModule(m.id); }}
+                className={`px-4 py-2 rounded-full border text-[9px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 ${
+                  isActive
+                    ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/40 shadow-primary'
+                    : 'bg-transparent text-emerald-100/50 border-transparent hover:border-emerald-950/60 hover:text-emerald-400'
+                }`}
+              >
+                <span>{m.icon}</span>
+                <span>{m.title}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          {mobileStepperOpen && (
-            <div className="absolute z-40 w-52 h-52 flex items-center justify-center animate-fadeIn pointer-events-none">
-              {modules.map((m, idx) => {
-                const angle = (idx * (2 * Math.PI)) / modules.length - Math.PI / 2; // Starts at 12 o'clock
-                const r = 70; // Radius in pixels
-                const x = r * Math.cos(angle);
-                const y = r * Math.sin(angle);
-                const isActive = activeModule === m.id;
-                
+        {/* Mobile quick telemetry log indicator */}
+        <div className="sm:hidden flex justify-between items-center px-2 py-1 font-mono text-[8px] text-emerald-400/70 border-t border-emerald-950/20 mt-2">
+          <span>SECTOR TELEMETRY // SECURE</span>
+          <span className="animate-pulse text-amber-500">TAP COMPASS WIDGET TO NAVIGATE</span>
+        </div>
+      </nav>
+
+      {/* 🌿 MAIN ENVIRONMENT GRID */}
+      <main className="flex-1 max-w-[1600px] mx-auto w-full p-6 sm:p-10 grid grid-cols-1 xl:grid-cols-4 gap-10 items-start">
+        {/* Left Spanning Quest Stream (spans 3 columns) */}
+        <div className="xl:col-span-3 space-y-10">
+          
+          {/* STATE-AWARE SUBSECTION RENDER */}
+          {(() => {
+            switch (activeModule) {
+              case MODULE_IDS.INTRO:
+                return (
+                  <div className="space-y-10">
+                    <CampaignsView 
+                      campaigns={campaigns}
+                      masteredMissions={masteredMissions}
+                      setMasteredMissions={setMasteredMissions}
+                      xp={xp}
+                      setXp={setXp}
+                      unlockBadge={unlockBadge}
+                      triggerSound={triggerSound}
+                      addKioskLog={addKioskLog}
+                      workingFiles={workingFiles}
+                      stagedFiles={stagedFiles}
+                      localCommits={localCommits}
+                      remoteCommits={remoteCommits}
+                      handleGitAdd={handleGitAdd}
+                      handleGitCommit={handleGitCommit}
+                      handleGitPush={handleGitPush}
+                      setActiveModule={setActiveModule}
+                      hasUnsetConfig={hasUnsetConfig}
+                      reactorState={reactorState}
+                    />
+
+                    <SandboxPipeline 
+                      workingFiles={workingFiles}
+                      stagedFiles={stagedFiles}
+                      localCommits={localCommits}
+                      animationState={animationState}
+                      handleGitAdd={handleGitAdd}
+                      handleGitCommit={handleGitCommit}
+                      handleGitPush={handleGitPush}
+                      handleReset={handleReset}
+                      visualLogs={visualLogs}
+                    />
+
+                    {/* Mastered Certification Card */}
+                    {masteredMissionsCount === campaigns.length && (
+                      <div className="pt-6">
+                        <CertificateCard studentName={configs['user.name'] || 'Orion Student'} />
+                      </div>
+                    )}
+                  </div>
+                );
+
+              case 'reactor':
+                return (
+                  <ReactorView 
+                    reactorState={reactorState}
+                    reactorTemp={reactorTemp}
+                    reactorTimer={reactorTimer}
+                    reactorQuestionIdx={reactorQuestionIdx}
+                    reactorScore={reactorScore}
+                    reactorQuestions={reactorQuestions}
+                    startReactorGame={startReactorGame}
+                    handleReactorAnswer={handleReactorAnswer}
+                    setActiveModule={setActiveModule}
+                    triggerSound={triggerSound}
+                  />
+                );
+
+              case 'badges':
+                return (
+                  <BadgesView 
+                    badgeLibrary={badgeLibrary}
+                    earnedBadges={earnedBadges}
+                    setEarnedBadges={setEarnedBadges}
+                    configs={configs}
+                    stagedFiles={stagedFiles}
+                    localCommits={localCommits}
+                    remoteCommits={remoteCommits}
+                    reactorState={reactorState}
+                    level={level}
+                    addKioskLog={addKioskLog}
+                    triggerSound={triggerSound}
+                  />
+                );
+
+              case 'glossary':
+                return <GlossaryView />;
+
+              case MODULE_IDS.SCOPES:
+                return <ScopesView />;
+
+              case 'registry-editor':
+                return (
+                  <RegistryEditorView 
+                    configs={configs}
+                    handleUpdateConfig={handleUpdateConfig}
+                    handleRemoveConfig={handleRemoveConfig}
+                    newRegistryKey={newRegistryKey}
+                    setNewRegistryKey={setNewRegistryKey}
+                    newRegistryValue={newRegistryValue}
+                    setNewRegistryValue={setNewRegistryValue}
+                    kioskLogs={kioskLogs}
+                    triggerSound={triggerSound}
+                  />
+                );
+
+              case 'team-workspace':
+                return (
+                  <TeamWorkspaceView 
+                    teamMembers={teamMembers}
+                    setTeamMembers={setTeamMembers}
+                    newMemberEmail={newMemberEmail}
+                    setNewMemberEmail={setNewMemberEmail}
+                    newMemberRole={newMemberRole}
+                    setNewMemberRole={setNewMemberRole}
+                    handleAddSeat={handleAddSeat}
+                    addKioskLog={addKioskLog}
+                    triggerSound={triggerSound}
+                  />
+                );
+
+              case MODULE_IDS.CHEATSHEET:
+                return <CheatsheetView />;
+
+              case MODULE_IDS.TROUBLESHOOTING:
+                return <DiagnosticsView onLogout={handleLogout} />;
+
+              default:
+                return (
+                  <div className="flex flex-col items-center justify-center text-center py-20 font-mono">
+                    <span className="text-6xl animate-spin block mb-6">⚙️</span>
+                    <p className="text-[10px] text-emerald-500 tracking-[0.4em] uppercase font-bold">Initialization sequence active...</p>
+                  </div>
+                );
+            }
+          })()}
+        </div>
+
+        {/* =========================================================
+            🌿 RIGHT BIOME SIDEBAR CONTROL PANEL
+        ========================================================= */}
+        <div className="space-y-8 xl:sticky xl:top-[160px] z-20">
+          
+          {/* Pathway mastery progress card */}
+          <div className="p-6 border border-emerald-950/60 rounded-[2rem] bg-transparent space-y-4 font-mono shadow-inner">
+            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest block">Mastery Progress</span>
+            <h4 className="text-xs font-bold text-white uppercase">Academy Milestones</h4>
+            <div className="flex justify-between items-center text-[10px] text-emerald-100/40">
+              <span>Completed Missions:</span>
+              <span className="font-bold text-white">{masteredMissions.length} / {campaigns.length}</span>
+            </div>
+            
+            <div className="w-full h-2 bg-slate-900 rounded-full border border-emerald-950/60 overflow-hidden">
+              <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${(masteredMissions.length / campaigns.length) * 100}%` }}></div>
+            </div>
+
+            {masteredMissions.length === campaigns.length ? (
+              <button
+                onClick={() => {
+                  triggerSound('levelup');
+                  setCertificateOpen(true);
+                  addKioskLog("CREDENTIAL MODAL OVERLAY: Displaying sealed certificate.", "success");
+                }}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95"
+              >
+                View Academy Certificate
+              </button>
+            ) : (
+              <span className="text-[8.5px] italic text-emerald-600 block text-center">Complete all {campaigns.length} missions to unlock certificate</span>
+            )}
+          </div>
+
+          {/* Biome Canopy Visualizer Widget */}
+          <DigitalCanopy
+            workingFiles={workingFiles}
+            stagedFiles={stagedFiles}
+            localCommits={localCommits}
+            remoteCommits={remoteCommits}
+            animationState={animationState}
+            configs={configs}
+          />
+
+          {/* Active registry parameters */}
+          <div className="p-6 border border-emerald-950/60 rounded-[2rem] bg-transparent space-y-4 font-mono shadow-inner">
+            <header className="flex items-center justify-between">
+              <h4 className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Active Variable Registry</h4>
+              <span className="text-[8px] text-emerald-700 font-bold">SHA-256</span>
+            </header>
+            <div className="space-y-2">
+              {Object.entries(configs).map(([k, v]) => (
+                <div key={k} className="flex justify-between items-center py-2 border-b border-emerald-950/30 text-[9px] gap-2">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <button 
+                      onClick={() => handleRemoveConfig(k)}
+                      title="Unset Variable"
+                      className="text-red-500 hover:text-red-400 font-bold text-[8px] hover:scale-110 transition-transform active:scale-90"
+                    >
+                      🗑️
+                    </button>
+                    <span className="text-emerald-500 font-bold truncate">{k}</span>
+                  </div>
+                  <span className="text-emerald-100/50 block truncate max-w-[100px]" title={v}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sound Synthesizer control */}
+          <div className="p-6 border border-emerald-950/60 rounded-[2rem] bg-transparent flex justify-between items-center font-mono">
+            <div className="space-y-0.5">
+              <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest block">System Diagnostics</span>
+              <p className="text-[9px] text-emerald-100/40">Sound Synthesis: {soundsOn ? 'Active' : 'Disabled'}</p>
+            </div>
+            <button
+              onClick={() => {
+                setSoundsOn(!soundsOn);
+                if (!soundsOn) {
+                  playSynthSound('click');
+                }
+              }}
+              className={`px-3 py-1.5 border rounded-lg text-[8px] font-bold uppercase transition-all ${
+                soundsOn 
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' 
+                  : 'border-emerald-950 text-emerald-800'
+              }`}
+            >
+              Toggle
+            </button>
+          </div>
+        </div>
+      </main>
+
+      {/* 📜 CERTIFICATE POPUP FULLSCREEN MODAL OVERLAY */}
+      {certificateOpen && (
+        <div className="fixed inset-0 z-50 bg-[var(--color-overlay-dark)] backdrop-blur-md flex items-center justify-center p-6 animate-fadeIn">
+          <CertificateCard 
+            studentName={configs['user.name'] || 'Orion Student'} 
+            onClose={() => setCertificateOpen(false)}
+          />
+        </div>
+      )}
+
+      {/* 🧭 Global Floating Compass Dial Nav Trigger */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => { triggerSound('click'); setMobileStepperOpen(!mobileStepperOpen); }}
+          className={`w-14 h-14 rounded-full border-2 flex items-center justify-center text-xl shadow-2xl transition-all duration-300 ${
+            mobileStepperOpen 
+              ? 'border-amber-400 bg-amber-950/80 text-amber-400 rotate-180 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.3)]' 
+              : 'border-emerald-400 bg-slate-950/90 backdrop-blur text-emerald-400 hover:scale-110 hover:border-emerald-300 animate-bounce'
+          }`}
+          title="Open Radial Navigation Wheel"
+        >
+          🧭
+        </button>
+      </div>
+
+      {/* 🧭 Sci-Fi Rotatable Compass Dial Modal overlay */}
+      {mobileStepperOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-lg animate-fadeIn p-4 font-mono">
+          <div className="absolute top-6 right-6">
+            <button 
+              onClick={() => { triggerSound('click'); setMobileStepperOpen(false); }}
+              className="w-10 h-10 rounded-full border border-emerald-950/80 bg-slate-900 text-emerald-400 flex items-center justify-center text-lg hover:border-emerald-500 transition-all shadow-md active:scale-90"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="text-center max-w-sm mb-6 space-y-2 select-none">
+            <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest block bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full w-fit mx-auto">
+              Sector Navigation
+            </span>
+            <h3 className="text-lg font-black text-white uppercase tracking-tight">Holographic Steering Wheel</h3>
+            <p className="text-emerald-100/40 text-[9px] leading-relaxed">
+              Drag or rotate the wheel circular dial to lock onto target biome sector registry scopes, then tap core to enter.
+            </p>
+          </div>
+
+          {/* Glowing Top Selection Pointers */}
+          <div className="flex flex-col items-center mb-2 z-10 select-none">
+            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-amber-500 animate-bounce"></div>
+            <span className="text-[8px] font-black text-amber-500 uppercase tracking-wider mt-1">ALIGNMENT TARGET</span>
+          </div>
+
+          {/* Circular dial container */}
+          <div 
+            ref={circleRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            style={{ touchAction: 'none' }}
+            className="relative w-80 h-80 rounded-full border-4 border-dashed border-emerald-950 flex items-center justify-center cursor-grab active:cursor-grabbing bg-slate-950/50 shadow-[0_0_50px_rgba(16,185,129,0.05)] select-none transition-shadow duration-300 hover:shadow-[0_0_60px_rgba(16,185,129,0.1)]"
+          >
+            {/* Center Core Launch Trigger */}
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                setActiveModule(currentSelected.id);
+                setMobileStepperOpen(false);
+                triggerSound('success');
+              }}
+              className="absolute w-28 h-28 rounded-full border-4 border-emerald-950 bg-slate-900 flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-300 z-50 hover:border-emerald-400 group active:scale-95 cursor-pointer pointer-events-auto p-2"
+            >
+              <span className="text-3xl filter drop-shadow-[0_4px_6px_rgba(16,185,129,0.2)] group-hover:scale-110 transition-transform duration-300">
+                {currentSelected.icon}
+              </span>
+              <span className="text-[7.5px] font-black text-emerald-400 tracking-wider mt-1.5 uppercase leading-tight line-clamp-2">
+                {currentSelected.title.split('//')[0]}
+              </span>
+            </button>
+
+            {/* Rotating Wheel Group */}
+            <div 
+              style={{ transform: `rotate(${rotationAngle}deg)`, transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}
+              className="absolute w-full h-full rounded-full flex items-center justify-center"
+            >
+              {COMPASS_ITEMS.map((m, idx) => {
+                const angle = (idx * 40) - 90; // Spaced 40 degrees, start at -90 (12 o'clock)
+                const r = 110; // radius
+                const x = r * Math.cos(angle * (Math.PI / 180));
+                const y = r * Math.sin(angle * (Math.PI / 180));
+                const isCurrent = idx === selectedIdx;
+
                 return (
                   <button
                     key={m.id}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setActiveModule(m.id);
                       setMobileStepperOpen(false);
+                      triggerSound('success');
                     }}
-                    style={{
-                      transform: `translate(${x}px, ${y}px)`
+                    style={{ 
+                      transform: `translate(${x}px, ${y}px) rotate(${-rotationAngle}deg)` 
                     }}
-                    className={`absolute p-2 rounded-full border text-xs shadow-lg pointer-events-auto transition-all hover:scale-110 ${
-                      isActive 
-                        ? 'border-emerald-400 bg-emerald-950/60 text-emerald-400 scale-110 shadow-[0_0_8px_rgba(16,185,129,0.3)]' 
-                        : 'border-[#1e1f48] bg-[#0c0d1e]/90 text-emerald-100/60 hover:text-emerald-400'
+                    className={`absolute w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg shadow-lg pointer-events-auto transition-all duration-300 ${
+                      isCurrent 
+                        ? 'border-amber-400 bg-amber-950/90 text-amber-300 scale-125 shadow-[0_0_15px_rgba(245,158,11,0.5)] ring-2 ring-amber-500/20 z-40' 
+                        : 'border-emerald-950 bg-[#12221b]/90 text-emerald-100/70 hover:border-emerald-500 hover:text-emerald-300 z-30'
                     }`}
                     title={m.title}
                   >
@@ -1324,121 +1436,16 @@ const App: React.FC = () => {
                 );
               })}
             </div>
-          )}
-        </div>
-
-        {/* Desktop flex-wrap stepper */}
-        <div className="hidden sm:flex flex-wrap items-center gap-3">
-          {modules.map((m) => {
-            const isActive = activeModule === m.id;
-            return (
-              <button
-                key={m.id}
-                onClick={() => setActiveModule(m.id)}
-                className={`px-5 py-2.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 ${
-                  isActive
-                    ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(74,78,181,0.25)]'
-                    : 'bg-transparent text-emerald-100/50 border-transparent hover:border-[#1e1f48] hover:text-emerald-400'
-                }`}
-              >
-                <span>{m.icon}</span>
-                <span>{m.title}</span>
-                {masteredModules[m.id] && <span className="text-[10px] text-emerald-400 font-bold">✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Widescreen Card-less Layout */}
-      <main className="flex-1 max-w-[1600px] mx-auto w-full p-6 sm:p-12 grid grid-cols-1 xl:grid-cols-4 gap-12 items-start" role="main">
-        {/* Left Spanning Stream (spans 3 columns) */}
-        <div className="xl:col-span-3 space-y-12">
-          {/* Module header */}
-          <header className="space-y-4">
-            <div className="flex items-center space-x-3 text-[10px] font-black text-emerald-700 uppercase tracking-[0.4em]">
-              <span className="w-8 h-[1px] bg-[#1e1f48]"></span>
-              <span>Active Reference Core</span>
-            </div>
-            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter capitalize leading-tight">
-              {activeModule.replace('-', ' ')}
-            </h2>
-          </header>
-
-          {/* Content Area - Completely card-less raw design */}
-          <div className="relative border-l border-dashed border-[#1e1f48] pl-8 space-y-8 animate-fadeIn">
-            {renderModuleContent()}
-          </div>
-        </div>
-
-        {/* Right Sticky Sidebar Control Panel (spans 1 column) */}
-        <div className="space-y-8 xl:sticky xl:top-[180px] z-20">
-          {/* Pathway Mastery Controls */}
-          <div className="p-6 border border-[#1e1f48] rounded-3xl bg-transparent space-y-4">
-            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest block">Progress Verification</span>
-            <h4 className="text-sm font-bold text-white">Pathway Sign-Off</h4>
-            <p className="text-[11px] text-emerald-100/40 leading-relaxed">Sign off this active pathway module to register verified developer credits.</p>
-            <button
-              onClick={toggleMasteryState}
-              className={`w-full py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${
-                masteredModules[activeModule]
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  : 'bg-transparent text-emerald-100/60 hover:text-emerald-400 border-[#1e1f48] hover:border-emerald-500/20'
-              }`}
-            >
-              {masteredModules[activeModule] ? '✓ Signed' : 'Authorize Pathway'}
-            </button>
           </div>
 
-          {/* Active Local configurations */}
-          <div className="p-6 border border-[#1e1f48] rounded-3xl bg-transparent space-y-4">
-            <header className="flex items-center justify-between">
-              <h4 className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Git Registry State</h4>
-              <span className="text-[8px] text-emerald-700 font-mono">UTF-8</span>
-            </header>
-            <div className="space-y-2">
-              {Object.entries(configs).map(([k, v]) => (
-                <div key={k} className="flex justify-between items-center py-2 border-b border-[#1e1f48]/40 text-[10px] font-mono">
-                  <span className="text-emerald-500 font-bold">{k}</span>
-                  <span className="text-emerald-100/50 inline-block truncate max-w-[120px]">{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Workspace Seats */}
-          <div className="p-6 border border-[#1e1f48] rounded-3xl bg-transparent space-y-4">
-            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest block">Workspace Seats</span>
-            <div className="flex justify-between items-center text-[10px] font-mono">
-              <div>
-                <span className="text-emerald-500 font-bold">Quota Status</span>
-                <p className="text-emerald-100/60 mt-0.5">{teamMembers.length} / ∞</p>
-              </div>
-              <button 
-                onClick={() => setActiveModule('team-workspace')}
-                className="px-2.5 py-1.5 bg-[#101129] border border-emerald-500/20 text-emerald-400 font-bold rounded-lg uppercase text-[8px] transition-all hover:bg-emerald-950/40"
-              >
-                Seats
-              </button>
-            </div>
+          {/* Active target descriptor display */}
+          <div className="mt-8 text-center max-w-xs space-y-1 bg-slate-950/80 border border-emerald-950/80 p-4 rounded-2xl shadow-xl select-none">
+            <span className="text-[7px] text-emerald-500 font-black uppercase tracking-widest">Locked Target System:</span>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">{currentSelected.title}</h4>
+            <p className="text-[9px] text-emerald-100/50 leading-relaxed max-w-[240px] mx-auto">{currentSelected.desc}</p>
           </div>
         </div>
-      </main>
-
-      {/* Widescreen footer */}
-      <footer className="max-w-[1600px] mx-auto w-full px-8 py-10 border-t border-[#1e1f48] flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-emerald-800 font-mono tracking-widest uppercase mt-20">
-        <nav className="flex items-center gap-10">
-          <span className="flex items-center font-black text-emerald-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-            GIT LEARNING HUB SYSTEM
-          </span>
-          <button className="hover:text-emerald-500 transition-colors">Workspace SLA</button>
-          <button className="hover:text-emerald-500 transition-colors">Privacy Policy</button>
-        </nav>
-        <p className="text-emerald-950">&copy; 2026 Git Learning Hub Inc // Project Orion</p>
-      </footer>
+      )}
     </div>
   );
-};
-
-export default App;
+}
