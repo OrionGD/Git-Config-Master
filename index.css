@@ -1,0 +1,223 @@
+:root {
+  /* =========================================================
+     CORE BRAND PALETTE (OCEAN TWILIGHT)
+  ========================================================= */
+  --color-brand-50: rgb(237 237 248);
+  --color-brand-100: rgb(219 220 240);
+  --color-brand-200: rgb(183 184 225);
+  --color-brand-300: rgb(146 149 211);
+  --color-brand-400: rgb(110 113 196);
+  --color-brand-500: rgb(74 78 181);
+  --color-brand-600: rgb(59 62 145);
+  --color-brand-700: rgb(44 47 109);
+  --color-brand-800: rgb(30 31 72);
+  --color-brand-900: rgb(15 16 36);
+  --color-brand-950: rgb(10 11 25);
+
+  /* =========================================================
+     TEXT COLORS
+  ========================================================= */
+  --color-text-primary: rgb(237 237 248);
+  --color-text-secondary: rgb(183 184 225);
+  --color-text-muted: rgb(110 113 196);
+  --color-text-disabled: rgb(74 78 181);
+  --color-text-dark: rgb(15 16 36);
+
+  /* =========================================================
+     BACKGROUND COLORS
+  ========================================================= */
+  --color-bg-primary: rgb(10 11 25);
+  --color-bg-secondary: rgb(15 16 36);
+  --color-bg-tertiary: rgb(30 31 72);
+  --color-bg-surface: rgb(237 237 248);
+  --color-bg-card: rgb(219 220 240);
+  --color-bg-modal: rgb(12 13 30);
+  --color-bg-hover: rgb(30 31 72);
+  --color-bg-active: rgb(44 47 109);
+  --color-bg-disabled: rgb(183 184 225);
+
+  /* =========================================================
+     BORDER COLORS
+  ========================================================= */
+  --color-border-primary: rgb(74 78 181);
+  --color-border-secondary: rgb(110 113 196);
+  --color-border-muted: rgb(146 149 211);
+  --color-border-dark: rgb(30 31 72);
+  --color-border-focus: rgb(59 62 145);
+
+  /* =========================================================
+     BUTTON COLORS
+  ========================================================= */
+  --color-button-primary: rgb(74 78 181);
+  --color-button-primary-hover: rgb(59 62 145);
+  --color-button-primary-active: rgb(44 47 109);
+  --color-button-primary-disabled: rgb(146 149 211);
+
+  --color-button-secondary: rgb(183 184 225);
+  --color-button-secondary-hover: rgb(146 149 211);
+  --color-button-secondary-active: rgb(110 113 196);
+  --color-button-secondary-disabled: rgb(219 220 240);
+
+  --color-button-tertiary: transparent;
+  --color-button-tertiary-hover: rgb(219 220 240);
+  --color-button-tertiary-active: rgb(183 184 225);
+  --color-button-tertiary-border: rgb(74 78 181);
+
+  /* =========================================================
+     ACCENT COLORS
+  ========================================================= */
+  --color-accent-primary: rgb(74 78 181);
+  --color-accent-secondary: rgb(110 113 196);
+  --color-accent-soft: rgb(219 220 240);
+  --color-accent-dark: rgb(30 31 72);
+
+  /* =========================================================
+     STATUS COLORS
+  ========================================================= */
+  --color-success: rgb(34 197 94);
+  --color-warning: rgb(245 158 11);
+  --color-danger: rgb(239 68 68);
+  --color-error: rgb(220 38 38);
+  --color-info: rgb(59 130 246);
+
+  /* =========================================================
+     INPUT COLORS
+  ========================================================= */
+  --color-input-bg: rgb(237 237 248);
+  --color-input-border: rgb(146 149 211);
+  --color-input-border-focus: rgb(74 78 181);
+  --color-input-placeholder: rgb(110 113 196);
+  --color-input-text: rgb(15 16 36);
+
+  /* =========================================================
+     SIDEBAR COLORS
+  ========================================================= */
+  --color-sidebar-bg: rgb(10 11 25);
+  --color-sidebar-item: rgb(219 220 240);
+  --color-sidebar-item-hover: rgb(30 31 72);
+  --color-sidebar-item-active: rgb(44 47 109);
+  --color-sidebar-text: rgb(237 237 248);
+
+  /* =========================================================
+     NAVBAR COLORS
+  ========================================================= */
+  --color-navbar-bg: rgb(15 16 36);
+  --color-navbar-border: rgb(30 31 72);
+  --color-navbar-text: rgb(237 237 248);
+
+  /* =========================================================
+     TABLE COLORS
+  ========================================================= */
+  --color-table-header: rgb(30 31 72);
+  --color-table-row: rgb(237 237 248);
+  --color-table-row-hover: rgb(219 220 240);
+  --color-table-border: rgb(183 184 225);
+
+  /* =========================================================
+     SHADOWS (blue-indigo twilight tinted)
+  ========================================================= */
+  --shadow-primary: 0 4px 12px rgba(74, 78, 181, 0.25);
+  --shadow-secondary: 0 4px 20px rgba(30, 31, 72, 0.3);
+  --shadow-card: 0 2px 10px rgba(10, 11, 25, 0.2);
+
+  /* =========================================================
+     OVERLAY COLORS
+  ========================================================= */
+  --color-overlay-dark: rgba(10, 11, 25, 0.75);
+  --color-overlay-light: rgba(237, 237, 248, 0.6);
+
+  /* =========================================================
+     OPACITY SCALE
+  ========================================================= */
+  --opacity-disabled: 0.45;
+  --opacity-muted: 0.65;
+  --opacity-soft: 0.85;
+  --opacity-solid: 1;
+
+  /* =========================================================
+     INDUSTRIAL UI SPECIAL COLORS
+  ========================================================= */
+  --color-kiosk-bg: rgb(8 9 20);
+  --color-kiosk-border: rgb(44 47 109);
+  --color-kiosk-glow: rgba(74, 78, 181, 0.35);
+
+  --color-live-indicator: rgb(74 78 181);
+  --color-security-alert: rgb(239 68 68);
+  --color-geofence-warning: rgb(245 158 11);
+
+  /* =========================================================
+     AI ASSISTANT COLORS
+  ========================================================= */
+  --color-ai-bg: rgb(12 13 30);
+  --color-ai-message-user: rgb(44 47 109);
+  --color-ai-message-system: rgb(237 237 248);
+  --color-ai-border: rgb(74 78 181);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Global Scrollbar Removal - Maintains natural scroll physics but hides visual tracks */
+::-webkit-scrollbar {
+  display: none !important;
+}
+html, body, pre, div, section {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Glassmorphism custom panel styling */
+.glass-panel {
+  backdrop-filter: blur(16px);
+  background: rgba(15, 16, 36, 0.7);
+  border: 1px solid rgba(74, 78, 181, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(10, 11, 25, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(74, 78, 181, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(74, 78, 181, 0.1);
+}
+
+/* Kiosk mode console container */
+.kiosk-panel {
+  background: var(--color-kiosk-bg);
+  border: 2px solid var(--color-kiosk-border);
+  box-shadow: 0 0 20px var(--color-kiosk-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.kiosk-panel::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 2;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+/* Glowing text effects */
+.brand-glow {
+  text-shadow: 0 0 8px rgba(74, 78, 181, 0.6);
+}
+
+.brand-glow-strong {
+  text-shadow: 0 0 15px rgba(74, 78, 181, 0.9), 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+/* Custom interactive transition tags */
+
+
+.mobile-nav-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
